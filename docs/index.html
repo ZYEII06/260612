@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>PS 派對大亂鬥｜整合版（單機）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#FF6B6B; --red-dark:#FF5252;
+  --teal:#4ECDC4; --yellow:#FFE66D; --mint:#95E1D3; --mint-soft:#A8E6CF;
+  --white:#FFFFFF; --ink:#1A1A2E; --line:#E0E0E0;
+  --ps-bg:#1E1E1E; --ps-paste:#181818; --ps-bar:#323232; --ps-panel:#2B2B2B;
+  --ps-border:#141414; --ps-text:#CFCFCF; --ps-dim:#8A8A8A; --ps-blue:#2D8CEB;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{height:100%}
+body{
+  background:linear-gradient(160deg,#D9F4F1,#FDF3D8);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Poppins',-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+  color:var(--ink);
+  touch-action:manipulation;overflow:hidden;
+}
+#phone{
+  position:relative;width:min(402px,100vw);height:min(874px,100dvh);
+  background:var(--white);overflow:hidden;
+  box-shadow:0 18px 50px rgba(26,26,46,.25);
+}
+@media (min-width:430px) and (min-height:900px){
+  #phone{border-radius:40px;border:8px solid var(--ink);
+  }
+}
+/* ===== 模式選擇頁面 ===== */
+#scr-mode-select{
+  background: url('../模式選擇.png') center / cover no-repeat;
+  align-items:center;justify-content:center;text-align:center;
+}
+.selected-slot {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  background: rgba(26,26,46,0.05);
+  border: 2px dashed var(--line);
+  display: grid;
+  place-items: center;
+  transition: all 0.3s;
+}
+.selected-slot.filled {
+  background: var(--white);
+  border: 2px solid var(--teal);
+  box-shadow: 0 4px 12px rgba(78,205,196,0.3);
+  animation: slotpop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes slotpop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.selected-slot .icon {
+  width: 50px; height: 50px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 24px; color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* ===== 共用 ===== */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+.btn{
+  font:inherit;font-weight:700;font-size:16px;color:var(--white);
+  background:var(--red);border:none;border-radius:12px;
+  padding:14px 18px;cursor:pointer;
+  box-shadow:0 6px 16px rgba(45,140,235,0.3);
+  transition:all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select:none;-webkit-user-select:none;
+}
+.btn:active{transform:scale(.95);background:var(--ps-blue-dark);box-shadow:0 2px 8px rgba(45,140,235,0.4);}
+.btn.ghost{background:rgba(255,255,255,0.6);color:var(--gold-yellow);border:2px solid var(--gold-yellow);box-shadow:none}
+.btn.yellow{background:var(--gold-yellow);color:var(--ink);box-shadow:0 6px 16px rgba(242,183,31,0.3)}
+.floatpt{position:absolute;font-size:18px;font-weight:800;pointer-events:none;
+  animation:floatup .7s ease-out forwards;z-index:60}
+.floatpt.good{color:#3BE6C5;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.floatpt.bad{color:#FF8A8A;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+@keyframes floatup{to{transform:translateY(-46px);opacity:0}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.particle{position:absolute;width:9px;height:9px;border-radius:50%;pointer-events:none;z-index:55;
+  animation:part .55s ease-out forwards}
+@keyframes part{to{transform:translate(var(--dx),var(--dy)) scale(.25);opacity:0}}
+.bigpop{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
+  font-size:26px;font-weight:800;color:var(--yellow);z-index:75;pointer-events:none;white-space:nowrap;
+  text-shadow:0 3px 10px rgba(0,0,0,.55);animation:bigpop .8s ease-out forwards}
+@keyframes bigpop{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}25%{transform:translate(-50%,-50%) scale(1.2);opacity:1}70%{opacity:1}100%{transform:translate(-50%,-70%) scale(1);opacity:0}}
+.readygo{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:80;pointer-events:none}
+.readygo.show{display:flex}
+.readygo b{font-size:52px;font-weight:800;color:#FFF;letter-spacing:.06em;
+  text-shadow:0 4px 16px rgba(0,0,0,.6);animation:rgpop .45s ease-out}
+@keyframes rgpop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+.shakeit{animation:scrshake .3s}
+@keyframes scrshake{0%,100%{transform:translate(0)}20%{transform:translate(-5px,3px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-4px,-2px)}80%{transform:translate(3px,2px)}}
+
+/* ===== 首頁 ===== */
+#scr-home{background:linear-gradient(180deg,#FFFFFF 0%,#F2FCFA 100%)}
+.back-btn {
+  position: absolute; left: 18px; top: calc(env(safe-area-inset-top,0px) + 18px);
+  width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--white); display: grid; place-items: center; font-size: 18px;
+  cursor: pointer; z-index: 20; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: transform 0.1s;
+}
+.back-btn:active { transform: scale(0.9); }
+.home-top{padding:calc(env(safe-area-inset-top,0px) + 22px) 24px 0;text-align:center}
+.home-top .pill{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;
+  background:var(--mint-soft);color:var(--ink);padding:6px 16px;border-radius:20px}
+.home-top h1{font-size:36px;font-weight:800;margin-top:10px;line-height:1.12}
+.home-top h1 .hl{color:var(--red)}
+.home-top .sub{font-size:15px;font-weight:600;color:#5A5A6E;margin-top:2px}
+.diffwrap{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px}
+.diffwrap>small{font-size:12px;font-weight:700;color:#8A8A9A}
+.seg{display:flex;background:#F0F0F4;border-radius:12px;padding:4px;gap:4px}
+.seg button{
+  font-family:inherit;font-size:12.5px;font-weight:700;color:#7A7A8A;
+  background:transparent;border:none;border-radius:9px;padding:7px 13px;cursor:pointer;
+  transition:background .15s,color .15s;
+}
+.seg button.sel{background:var(--ink);color:#FFF;box-shadow:0 3px 6px rgba(26,26,46,.25)}
+.menu-cards {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 14px 24px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.menu-cards::-webkit-scrollbar {
+  width: 4px;
+}
+.menu-cards::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  margin: 10px 0;
+}
+.menu-cards::-webkit-scrollbar-thumb {
+  background: var(--teal);
+  border-radius: 10px;
+}
+.mcard{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:86px;padding:12px 14px;
+  border:none;border-radius:16px;cursor:pointer;text-align:left;
+  box-shadow:0 8px 20px rgba(45,140,235,0.15);
+  transition:transform .15s;user-select:none;-webkit-user-select:none;
+  color:var(--white);font-family:inherit;
+}
+.mcard:active{transform:scale(.97)}
+.mcard.c1{background:linear-gradient(135deg,#FF6B6B,#FF9A8B)}
+.mcard.c2{background:linear-gradient(135deg,#4ECDC4,#95E1D3)}
+.mcard.c3{background:linear-gradient(135deg,#FFD93D,#FFE66D);color:var(--ink)}
+.mcard .icon{width:54px;height:54px;flex:none;border-radius:50%;
+  background:rgba(255,255,255,.92);display:grid;place-items:center;font-size:28px;
+  box-shadow:0 4px 10px rgba(26,26,46,.15)}
+.mcard .info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.mcard .info .gnum{font-size:10px;font-weight:700;letter-spacing:.05em;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.mcard .info .gname{font-size:18px;font-weight:800;display:block;margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcard .info .gslo{font-size:11px;opacity:.92;display:block;line-height:1.25;margin-top:1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mcard .info .gbest{display:inline-block;margin-top:4px;font-size:10px;font-weight:700;
+  background:rgba(255,255,255,.85);color:var(--ink);padding:2px 9px;border-radius:20px}
+.mcard .qp{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.92);color:var(--ink);font-size:13px;
+  box-shadow:0 3px 8px rgba(26,26,46,.18)}
+.home-foot{padding:0 24px calc(env(safe-area-inset-bottom,0px) + 14px);text-align:center}
+.home-foot p{font-size:10.5px;color:#9A9AAA;font-weight:600}
+.home-foot .dots{display:flex;justify-content:center;gap:8px;margin-bottom:5px}
+.home-foot .dots i{width:10px;height:10px;border-radius:50%}
+.home-foot .dots i:nth-child(1){background:var(--red)}
+.home-foot .dots i:nth-child(2){background:var(--teal)}
+.home-foot .dots i:nth-child(3){background:var(--yellow)}
+
+/* ===== Photoshop 工作區 ===== */
+.ps .psbar{
+  flex:none;display:flex;align-items:center;gap:8px;
+  padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 6px;
+  background:var(--ps-bar);border-bottom:1px solid var(--ps-border);
+}
+.ps .exit{
+  width:34px;height:34px;flex:none;border-radius:8px;border:1px solid #4A4A4A;
+  background:#3D3D3D;font-size:13px;font-weight:800;color:var(--ps-text);cursor:pointer;
+  transition:all .15s;
+}
+.ps .exit:active{transform:scale(.9); background:var(--red); border-color:var(--red); color:var(--white);}
+.ps .psmenu{flex:1;min-width:0;overflow:hidden;white-space:nowrap;
+  font-size:10px;color:var(--ps-dim);font-weight:600;letter-spacing:.04em}
+.ctimer{position:relative;width:46px;height:46px;flex:none}
+.ctimer svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ctimer .trk{fill:none;stroke:#4A4A4A;stroke-width:7}
+.ctimer .prg{fill:none;stroke:var(--teal);stroke-width:7;stroke-linecap:round;
+  stroke-dasharray:188.5;stroke-dashoffset:0;transition:stroke-dashoffset .12s linear, stroke .3s}
+.ctimer b{position:absolute;inset:0;display:grid;place-items:center;
+  font-size:14px;font-weight:800;color:#FFF;font-variant-numeric:tabular-nums}
+.pts{flex:none;min-width:64px;text-align:center;background:var(--yellow);
+  border-radius:10px;padding:4px 10px;box-shadow:0 3px 6px rgba(0,0,0,.3);
+  transition:transform .12s}
+.pts.bump{transform:scale(1.12)}
+.pts b{display:block;font-size:18px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums}
+.pts small{font-size:8.5px;font-weight:700;color:#6A6A55;letter-spacing:.1em}
+.ps .optbar{
+  flex:none;display:flex;align-items:center;gap:8px;
+  padding:5px 10px;min-height:30px;
+  background:#383838;border-bottom:1px solid var(--ps-border);
+  font-size:11px;color:var(--ps-text);font-weight:600;
+  white-space:nowrap;overflow:hidden;
+}
+.ps .optbar .tglyph{font-size:13px}
+.ps .optbar .osep{color:#5A5A5A}
+.ps .optbar .oright{margin-left:auto;display:flex;align-items:center;gap:6px}
+.combochip{font-size:10px;font-weight:800;background:#4A4A4A;color:#CFCFCF;
+  padding:2px 9px;border-radius:10px;transition:background .15s}
+.combochip.hot{background:var(--red);color:#FFF;animation:combopop .25s}
+@keyframes combopop{0%{transform:scale(1.5)}100%{transform:scale(1)}}
+.ps .psmain{flex:1;display:flex;min-height:0;background:var(--ps-paste)}
+.pstools{flex:none;width:46px;display:flex;flex-direction:column;gap:3px;
+  padding:6px 4px;background:var(--ps-bar);border-right:1px solid var(--ps-border);overflow:hidden}
+.tbtn{
+  width:38px;height:36px;border:none;border-radius:7px;cursor:pointer;
+  background:transparent;color:var(--ps-text);font-size:17px;line-height:1;
+  display:grid;place-items:center;font-family:inherit;
+  transition:background .12s, transform .12s;
+  user-select:none;-webkit-user-select:none;
+}
+.tbtn:active{transform:scale(.9)}
+.tbtn.sel{background:var(--ps-blue);color:#FFF}
+.tbtn.need{animation:needpulse .8s ease-in-out infinite;box-shadow:0 0 0 2px var(--yellow)}
+@keyframes needpulse{0%,100%{box-shadow:0 0 0 2px var(--yellow)}50%{box-shadow:0 0 0 5px rgba(255,230,109,.55)}}
+.tbtn .tt{font-weight:800;font-family:Georgia,serif}
+.psdoc{flex:1;display:flex;flex-direction:column;min-width:0}
+.doctab{flex:none;display:flex;align-items:flex-end;background:#262626;padding:5px 8px 0}
+.doctab span{font-size:10px;color:var(--ps-text);font-weight:600;
+  background:#3A3A3A;border:1px solid var(--ps-border);border-bottom:none;
+  border-radius:6px 6px 0 0;padding:5px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.doctab span i{color:var(--ps-dim);font-style:normal}
+.canvaswrap{flex:1;display:flex;padding:10px;min-height:0;background:var(--ps-paste);position:relative}
+.canvas{flex:1;position:relative;overflow:hidden;border-radius:2px;
+  box-shadow:0 4px 18px rgba(0,0,0,.65);touch-action:none}
+.canvas.transp{background:repeating-conic-gradient(#C8C8C8 0% 25%, #F2F2F2 0% 50%) 0 0/16px 16px}
+.ps .statusbar{flex:none;padding:4px 12px;background:var(--ps-bar);
+  border-top:1px solid var(--ps-border);font-size:9.5px;color:var(--ps-dim);font-weight:600;
+  white-space:nowrap;overflow:hidden}
+.ps .hintbar{flex:none;padding:9px 14px calc(env(safe-area-inset-bottom,0px) + 11px);
+  background:#262626;border-top:1px solid var(--ps-border);
+  font-size:11.5px;font-weight:700;color:#D8D4C2;text-align:center}
+.ps-skip {
+  display: none; background: #444; border: 1px solid #666; color: #eee;
+  font-size: 10px; padding: 3px 10px; border-radius: 6px;
+  margin-left: 12px; cursor: pointer; vertical-align: middle;
+  transition: all 0.2s;
+}
+.ps-skip:active { background: var(--red); border-color: var(--red); transform: scale(0.9); }
+.pickbanner{position:absolute;left:12px;z-index:70;
+  width:calc(100% - 30px);max-width:200px;text-align:left;
+  background:rgba(26,26,46,.92);color:#FFF;border-radius:14px;padding:16px 14px;
+  box-shadow:0 8px 20px rgba(0,0,0,.5);display:none}
+.pickbanner.show{display:block;animation:ovin .25s ease-out}
+.pickbanner .big{font-size:15px;font-weight:800;line-height:1.6}
+.pickbanner .arrow{position:absolute;left:-42px;top:50%;transform:translateY(-50%);
+  font-size:26px;animation:arrowL .7s ease-in-out infinite}
+@keyframes arrowL{0%,100%{transform:translateY(-50%) translateX(0)}50%{transform:translateY(-50%) translateX(-7px)}}
+.pickbanner small{display:block;margin-top:6px;font-size:11px;color:#CFCFCF;font-weight:600}
+
+/* ===== Game 1（掉落水果＋Combo） ===== */
+.fruit{
+  position:absolute;width:64px;height:64px;border-radius:12px;
+  display:grid;place-items:center;font-size:34px;cursor:pointer;
+  border:1.5px solid rgba(26,26,46,.35);
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+  user-select:none;-webkit-user-select:none;touch-action:none;
+}
+.fruit.transparented{border:1.5px dashed #9A9A9A;background:transparent !important;box-shadow:none}
+.fruit.zapped{animation:zap .36s ease-in forwards;background:transparent !important;
+  border:2px dashed var(--ps-blue);box-shadow:0 0 0 5px rgba(45,140,235,.35)}
+.fruit.wrong{animation:shake .3s;border-color:var(--red)}
+@keyframes zap{0%{transform:scale(1.05)}55%{transform:scale(1.25)}100%{transform:scale(.15) rotate(25deg);opacity:0}}
+.splat{position:absolute;width:26px;height:26px;border-radius:50%;pointer-events:none;z-index:5;
+  opacity:.85;animation:splatin .25s ease-out}
+@keyframes splatin{from{transform:scale(.2)}to{transform:scale(1)}}
+
+/* ===== Game 2（圖層面板） ===== */
+.pslayers{flex:none;width:128px;display:flex;flex-direction:column;
+  background:var(--ps-panel);border-left:1px solid var(--ps-border)}
+.pslayers .phead{flex:none;padding:7px 10px;font-size:10px;font-weight:800;letter-spacing:.1em;
+  color:var(--ps-text);background:var(--ps-bar);border-bottom:1px solid var(--ps-border)}
+.pslayers .pops{flex:none;padding:5px 8px;font-size:9px;color:var(--ps-dim);font-weight:600;
+  border-bottom:1px solid var(--ps-border);white-space:nowrap;overflow:hidden}
+#g2-list{position:relative;flex:1;margin:6px}
+.lrow{
+  position:absolute;left:0;right:0;height:50px;border-radius:6px;
+  background:#3A3A3A;border:1px solid var(--ps-border);
+  display:flex;align-items:center;gap:6px;padding:0 6px;
+  color:var(--ps-text);font-weight:700;font-size:10.5px;
+  transition:top .18s ease;
+  user-select:none;-webkit-user-select:none;
+}
+.lrow .eye{font-size:11px;opacity:.85;flex:none}
+.lrow .thumb{width:34px;height:34px;flex:none;border-radius:4px;border:1px solid #555;
+  display:grid;place-items:center;overflow:hidden;background-color:#FFF; /* 添加背景色以防圖片透明 */
+  background:repeating-conic-gradient(#BBB 0% 25%, #EEE 0% 50%) 0 0/8px 8px}
+.lrow .lname{flex:1;min-width:0;line-height:1.25}
+.lrow .lname small{display:block;font-size:8px;color:var(--ps-dim);font-weight:600}
+.lrow.you{background:#2C5F8A;border-color:var(--ps-blue);cursor:grab;touch-action:none;
+  box-shadow:0 0 0 1.5px var(--ps-blue)}
+.lrow.you.drag{transition:none;z-index:50;transform:scale(1.05);cursor:grabbing;
+  box-shadow:0 10px 20px rgba(0,0,0,.5),0 0 0 1.5px var(--yellow)}
+.lrow.cpuflash{animation:cpuflash .4s}
+@keyframes cpuflash{0%{background:#5A8A5A}100%{background:#3A3A3A}}
+.lrow .youtag{flex:none;font-size:8px;font-weight:800;background:var(--yellow);color:var(--ink);
+  padding:1px 6px;border-radius:20px}
+.pslayers .pfoot{flex:none;padding:6px 10px;font-size:11px;color:var(--ps-dim);
+  border-top:1px solid var(--ps-border);display:flex;justify-content:space-between}
+.tile{
+  position:absolute;width:54%;aspect-ratio:1/1;border-radius:50%;
+  display:grid;place-items:center;background-color:#FFF; /* 添加背景色以防圖片透明 */
+  transition:transform .18s, filter .18s;
+}
+.tile .crownpill{position:absolute;top:-15px;left:50%;transform:translateX(-50%);
+  background:var(--yellow);color:var(--ink);font-size:9.5px;font-weight:800;
+  padding:3px 9px;border-radius:20px;white-space:nowrap;display:none;
+  box-shadow:0 3px 6px rgba(0,0,0,.3);animation:crownbob .35s ease-in-out infinite alternate}
+.tile.ontop{transform:scale(1.1)}
+.tile.ontop .crownpill{display:block}
+.tile.under{filter:saturate(.7) brightness(.92)}
+@keyframes crownbob{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-4px)}}
+
+/* 平頭角色眨眼動畫：2張圖 Sprite Sheet (835x412) */
+@keyframes player-blink {
+  0%, 94% { background-position: 0% 0%; }    /* 睜眼時間 */
+  95%, 100% { background-position: 100% 0%; } /* 閉眼時間 (快速眨眼) */
+}
+
+.player-sprite {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  /* background-size 設定為 200% 表示圖片寬度是容器的兩倍，剛好容納兩張臉 */
+  background-size: 200% 100%; 
+  image-rendering: pixelated;
+}
+.player-sprite-thumb {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: 200% 100%; /* 同上，適用於小圖示 */
+  image-rendering: pixelated;
+}
+
+/* ===== Game 3（清潔度＋筆刷塗抹） ===== */
+.cleanrow{flex:none;display:flex;align-items:center;gap:8px;
+  padding:6px 12px;background:#2E2E2E;border-bottom:1px solid var(--ps-border)}
+.cleanrow small{font-size:9.5px;font-weight:800;color:var(--ps-dim);letter-spacing:.1em}
+.cleanrow .ctrack{flex:1;height:11px;background:#4A4A4A;border-radius:11px;overflow:hidden}
+.cleanrow .ctrack i{display:block;height:100%;width:0%;background:var(--mint);border-radius:11px;transition:width .25s ease-out}
+.cleanrow b{font-size:12px;font-weight:800;color:#FFF;width:42px;text-align:right;font-variant-numeric:tabular-nums}
+.canvas.scene{
+  background:
+    radial-gradient(circle at 80% 14%, #FFE66D 0 24px, rgba(255,230,109,0) 25px),
+    radial-gradient(130% 55% at 22% 108%, #95E1D3 0 58%, rgba(149,225,211,0) 59%),
+    radial-gradient(130% 48% at 86% 112%, #A8E6CF 0 52%, rgba(168,230,207,0) 53%),
+    linear-gradient(#DFF6F3,#FBFEFD)}
+#g3-boss{position:absolute;top:6px;left:8px;z-index:40;
+  width:64px;height:64px;
+  display:grid;place-items:center;
+  transition: left 0.8s ease-in-out;
+  animation:bossbob 1.6s ease-in-out infinite}
+#g3-boss.spit{animation:bossSpit .4s}
+@keyframes bossbob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(6px) rotate(3deg)}}
+@keyframes bossSpit{0%{transform:scale(1)}40%{transform:scale(1.2) rotate(-8deg)}100%{transform:scale(1)}}
+.mud{position:absolute;z-index:10;pointer-events:none;
+  transition:left .5s cubic-bezier(.2,.7,.3,1.1), top .5s cubic-bezier(.2,.7,.3,1.1), transform .5s}
+.mud .blob{width:100%;height:100%;
+  background:radial-gradient(circle at 38% 32%, rgba(155,116,72,.92) 0%, rgba(139,111,71,.85) 55%, rgba(106,82,49,.88) 100%);
+  filter:blur(1.5px)}
+.mud .face{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;opacity:.92}
+.mud.dead{transition:transform .25s,opacity .25s;transform:scale(.2) rotate(30deg);opacity:0}
+.cleanstar{position:absolute;z-index:12;pointer-events:none;font-size:20px;
+  animation:starpop .5s ease-out forwards}
+
+/* ===== Game 4（色彩對比） ===== */
+.mcard.c4{background:linear-gradient(135deg,#2D8CEB,#4ECDC4)}
+#g4-target-box{height:100px;margin:10px;border-radius:10px;border:2px solid var(--ps-border);position:relative;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.3)}
+#g4-target-color{position:absolute;inset:0}
+#g4-match-ui{background:var(--ps-panel);margin:10px;padding:12px;border-radius:12px;border:1px solid var(--ps-border);box-shadow:0 4px 15px rgba(0,0,0,0.5)}
+#g4-preview-color{height:70px;border-radius:8px;border:1px solid #555;margin-bottom:12px;display:flex;align-items:center;justify-content:center;color:#FFF;font-size:11px;font-weight:800;text-shadow:0 1px 2px #000;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3)}
+.g4-slider-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.g4-slider-row label{width:16px;font-size:12px;font-weight:800;color:var(--ps-text)}
+.g4-slider{flex:1;height:7px;-webkit-appearance:none;background:#444;border-radius:4px;outline:none}
+.g4-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#FFF;border:2px solid var(--ps-blue);cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.4)}
+#g4-r::-webkit-slider-thumb{background:#FF6B6B} #g4-g::-webkit-slider-thumb{background:#4ECDC4} #g4-b::-webkit-slider-thumb{background:#2D8CEB}
+
+/* ===== 介紹畫面 (Intro) ===== */
+#scr-intro{
+  /* 直接使用封面圖片作為背景，移除透明黑層 */
+  background: url('../封面.png') center / cover no-repeat;
+  align-items:center;justify-content:center;text-align:center;cursor:pointer;z-index:300;
+}
+/* 隱藏原有的標題和副標題，因為它們已經包含在背景圖片中 */
+#scr-intro h1,
+#scr-intro .sub {
+  display: none;
+}
+/* 調整「點擊螢幕任意處開始」的文字顏色和陰影，使其在背景圖片上更清晰可見 */
+#scr-intro .tap-start {
+  margin-top: 550px;
+  color: var(--white); /* 改為白色 */
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8); /* 加深陰影以確保在亮色背景下清晰 */
+  animation: pulse 2s infinite ease-in-out; /* 套用呼吸燈動畫 */
+}
+/* 原有的 h1, h1 .hl, .sub, .tap-start 樣式現在已被覆蓋或隱藏 */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* 向上淡出動畫 */
+.fade-out-up{animation:fadeOutUp 0.5s ease-in forwards !important}
+@keyframes fadeOutUp{to{transform:translateY(-40px);opacity:0}}
+
+/* ===== Game 5（筆刷大師） ===== */
+.mcard.c5{background:linear-gradient(135deg,#FF6B6B,#FFE66D);color:var(--ink)}
+#g5-target-circle{position:absolute;border:3px dashed var(--red);border-radius:50%;pointer-events:none;display:none;z-index:10}
+.brush-stroke{position:absolute;width:20px;height:20px;background:rgba(45,140,235,0.4);border-radius:50%;pointer-events:none;z-index:5}
+
+/* ===== Game 6（套索捕魚） ===== */
+.mcard.c6{background:linear-gradient(135deg,#2E3192,#1BFFFF)}
+.fish{position:absolute;font-size:32px;user-select:none;pointer-events:none;z-index:5;transition:transform 0.1s;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))}
+.fish.caught{animation:fish-up 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards}
+@keyframes fish-up{0%{transform:translateY(0) scale(1)} 100%{transform:translateY(-80px) scale(0); opacity:0}}
+#g6-svg{position:absolute;inset:0;pointer-events:none;z-index:10}
+#g6-lasso-path{fill:rgba(255,255,255,0.2);stroke:white;stroke-width:2;stroke-dasharray:4 2;stroke-linejoin:round;stroke-linecap:round}
+
+@keyframes starpop{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.6) translateY(-14px);opacity:0}}
+#g3-target{position:absolute;width:58px;height:58px;z-index:45;cursor:pointer;display:none;touch-action:none}
+#g3-target.show{display:block}
+#g3-target .ring{position:absolute;inset:0;border:3px dashed var(--red);border-radius:50%;
+  background:rgba(255,255,255,.6);animation:ringpulse 1s ease-in-out infinite}
+#g3-target .alt{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-size:10px;font-weight:800;background:var(--ink);color:#FFF;
+  padding:3px 8px;border-radius:8px;white-space:nowrap}
+@keyframes ringpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+#g3-cursor{position:absolute;border-radius:50%;z-index:30;
+  pointer-events:none;display:none;
+  border:2px solid var(--ps-blue);
+  background:repeating-conic-gradient(rgba(45,140,235,.35) 0% 25%, rgba(255,255,255,.5) 0% 50%) 0 0/12px 12px;
+  box-shadow:0 0 10px 4px rgba(45,140,235,.35)}
+.wipe{position:absolute;width:24px;height:24px;border-radius:50%;z-index:20;pointer-events:none;
+  background:rgba(149,225,211,.5);animation:wipefade .35s ease-out forwards}
+@keyframes wipefade{to{opacity:0;transform:scale(1.6)}}
+
+/* 頒獎典禮特效 */
+.award-rank { font-size: 72px; font-weight: 800; display: block; margin: -10px 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2)); }
+.rank-s { color: #FFD700; text-shadow: 0 0 25px rgba(255,215,0,0.6); animation: rank-pop 1s infinite alternate; }
+.rank-a { color: #C0C0C0; text-shadow: 0 0 15px rgba(192,192,192,0.4); }
+.rank-b { color: #CD7F32; }
+.rank-c { color: #8A8A9A; }
+@keyframes rank-pop { from { transform: scale(1); } to { transform: scale(1.15); } }
+.ceremony-flash { animation: flash 0.3s 3; }
+@keyframes flash { 0%, 100% { background: white; } 50% { background: var(--yellow); } }
+
+.res-row-anim { animation: row-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
+@keyframes row-in { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* 派對圖標彈出動畫 */
+.party-res-icon {
+  display: inline-block;
+  font-size: 34px;
+  margin: 0 8px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  animation: icon-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+@keyframes icon-pop {
+  0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.inkmini{display:flex;align-items:center;gap:5px}
+.inkmini small{font-size:9px;color:var(--ps-dim);font-weight:700}
+.inkmini .itrack{width:54px;height:8px;background:#4A4A4A;border-radius:8px;overflow:hidden}
+.inkmini .itrack i{display:block;height:100%;width:0%;background:var(--teal);border-radius:8px;transition:width .1s}
+
+/* ===== 覆蓋層 ===== */
+.overlay{position:absolute;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
+  background:rgba(26,26,46,.55);padding:24px}
+.overlay.show{display:flex}
+#ov-res.grade3{background:linear-gradient(160deg,rgba(255,230,109,.92),rgba(149,225,211,.92))}
+#ov-res.grade2{background:linear-gradient(160deg,rgba(78,205,196,.9),rgba(168,230,207,.9))}
+#ov-res.grade1{background:linear-gradient(160deg,rgba(255,107,107,.88),rgba(255,182,162,.88))}
+.ov-card{width:100%;max-width:332px;background:var(--white);border-radius:16px;
+  box-shadow:0 16px 32px rgba(26,26,46,.3);
+  padding:20px 18px;animation:ovin .25s ease-out;max-height:92%;overflow-y:auto}
+@keyframes ovin{from{transform:translateY(24px) scale(.95);opacity:0}to{transform:none;opacity:1}}
+.gamebadge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;
+  color:var(--white);padding:5px 13px;border-radius:20px;margin-bottom:8px}
+.ov-card h2{font-size:23px;font-weight:800;margin-bottom:2px}
+.ov-card .slo{font-size:13px;color:#8A8A9A;font-weight:600;margin-bottom:12px}
+.ov-sec{border-radius:12px;overflow:hidden;margin-bottom:9px;border:2px solid var(--line)}
+.ov-sec .h{padding:6px 12px;font-size:12px;font-weight:800;color:var(--white)}
+.ov-sec .b{padding:9px 12px;font-size:12.5px;line-height:1.7;background:var(--white)}
+.ov-sec.play .h{background:var(--red)}
+.ov-sec.skill .h{background:var(--teal)}
+.ov-sec.ui .h{background:#5A5A6E}
+.ov-card .btn{width:100%;margin-top:6px}
+#res-stars{font-size:34px;letter-spacing:6px;text-align:center;margin:4px 0 0}
+#res-stars span{display:inline-block;animation:starin .4s ease-out backwards}
+#res-stars span:nth-child(2){animation-delay:.15s}
+#res-stars span:nth-child(3){animation-delay:.3s}
+@keyframes starin{from{transform:scale(0) rotate(-30deg)}to{transform:scale(1) rotate(0)}}
+#res-score{font-size:46px;font-weight:800;color:var(--red);text-align:center;line-height:1.1;
+  font-variant-numeric:tabular-nums}
+.res-label{font-size:11px;font-weight:700;letter-spacing:.22em;color:#9A9AAA;text-align:center}
+#res-best{font-size:12px;font-weight:700;color:#5A5A6E;text-align:center;margin-top:3px}
+#res-achv{display:none;margin:8px auto 0;width:fit-content;max-width:100%;
+  background:var(--mint-soft);color:var(--ink);font-size:12.5px;font-weight:800;
+  padding:6px 16px;border-radius:20px;text-align:center}
+#res-achv.show{display:block;animation:ovin .3s ease-out}
+#res-break{display:none;margin-top:10px;border:2px solid var(--line);border-radius:12px;overflow:hidden}
+#res-break.show{display:block}
+#res-break .row{display:flex;justify-content:space-between;padding:7px 12px;font-size:12.5px;font-weight:700}
+#res-break .row:not(:last-child){border-bottom:1px solid var(--line)}
+#res-break .row b{font-variant-numeric:tabular-nums;color:var(--red)}
+#res-learn{margin-top:10px}
+.res-btns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.res-btns .row2{display:flex;gap:8px}
+.res-btns .row2 .btn{flex:1;margin-top:0;font-size:14px;padding:12px 8px}
+.nx-score{text-align:center;margin:8px 0 2px}
+.nx-score b{font-size:40px;font-weight:800;color:var(--red);font-variant-numeric:tabular-nums}
+.nx-total{display:flex;justify-content:center;gap:8px;align-items:center;
+  border-radius:12px;padding:9px;margin:10px 0;
+  font-size:13px;font-weight:700;background:#F5F5F5}
+.nx-total b{color:var(--red);font-size:18px;font-variant-numeric:tabular-nums}
+.nx-next{display:flex;align-items:center;gap:10px;border:2px dashed var(--teal);
+  border-radius:12px;padding:10px 12px;margin-bottom:4px}
+.nx-next .nicon{width:44px;height:44px;flex:none;border-radius:50%;background:#EDFAF8;
+  display:grid;place-items:center;font-size:24px}
+.nx-next .ntxt{font-size:12px;font-weight:700;color:#5A5A6E}
+.nx-next .ntxt b{display:block;font-size:15px;color:var(--ink)}
+#nx-leave{background:none;border:none;font-family:inherit;font-size:12px;font-weight:700;
+  color:#9A9AAA;text-decoration:underline;cursor:pointer;width:100%;margin-top:8px}
+
+/* Toast */
+#toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);
+  z-index:200;background:var(--ink);color:#FFF;font-size:12.5px;font-weight:700;
+  padding:10px 18px;border-radius:20px;
+  box-shadow:0 6px 14px rgba(26,26,46,.4);
+  opacity:0;transition:opacity .2s, transform .2s;pointer-events:none;
+  max-width:88%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01s !important;transition-duration:.01s !important}
+}
+</style>
+</head>
+<body>
+<div id="phone">
+
+  <!-- ================= 主選單 ================= -->
+  <section class="screen" id="scr-home">
+    <button class="back-btn" id="btn-home-back">←</button>
+    <div class="home-top">
+      <div class="diffwrap">
+        <small>難度</small>
+        <div class="seg" id="diff-seg">
+          <button data-d="easy">😊 簡單</button>
+          <button data-d="normal" class="sel">😼 普通</button>
+          <button data-d="hard">😈 困難</button>
+        </div>
+      </div>
+    </div>
+    <div class="menu-cards">
+      <button class="mcard c2" data-game="g2">
+        <span class="icon">🗂️</span>
+        <span class="info">
+          <span class="gnum">圖層順序</span>
+          <span class="gname">圖層疊疊樂</span>
+          <span class="gslo">在圖層面板拖曳排序，搶最上層！</span>
+          <span class="gbest" id="best-g2">🏆 最佳 0 分</span>
+        </span>
+        <span class="qp">▶</span>
+      </button>
+      <button class="mcard c6" data-game="g6">
+        <span class="icon">➿</span>
+        <span class="info">
+          <span class="gnum">套索工具</span>
+          <span class="gname">套索捕魚</span>
+          <span class="gslo">快速圈住游動的魚，大豐收！</span>
+          <span class="gbest" id="best-g6">🏆 最佳 0 分</span>
+        </span>
+        <span class="qp">▶</span>
+      </button>
+      <button class="mcard c1" data-game="g1">
+        <span class="icon">🪄</span>
+        <span class="info">
+          <span class="gnum">魔術棒｜去背</span>
+          <span class="gname">極速魔術棒</span>
+          <span class="gslo">水果掉下來！連擊去背衝 Combo</span>
+          <span class="gbest" id="best-g1">🏆 最佳 0 分</span>
+        </span>
+        <span class="qp">▶</span>
+      </button>
+      <button class="mcard c4" data-game="g4">
+        <span class="icon">🌈</span>
+        <span class="info">
+          <span class="gnum">色彩感知</span>
+          <span class="gname">色彩大師</span>
+          <span class="gslo">調整 RGB 滑桿，挑戰完美色彩對比！</span>
+          <span class="gbest" id="best-g4">🏆 最佳 0 分</span>
+        </span>
+        <span class="qp">▶</span>
+      </button>
+      <button class="mcard c5" data-game="g5">
+        <span class="icon">🖌️</span>
+        <span class="info">
+          <span class="gnum">筆刷工具</span>
+          <span class="gname">筆刷大師</span>
+          <span class="gslo">精準繪製圓形，挑戰手感極限！</span>
+          <span class="gbest" id="best-g5">🏆 最佳 0 分</span>
+        </span>
+        <span class="qp">▶</span>
+      </button>
+      <button class="mcard c3" data-game="g3">
+        <span class="icon">💠</span>
+        <span class="info">
+          <span class="gnum">仿製印章工具</span>
+          <span class="gname">仿製印章</span>
+          <span class="gslo">取樣 → 塗抹泥巴，清潔度衝 100%！</span>
+          <span class="gbest" id="best-g3">🏆 最佳 0 分</span>
+        </span>
+        <span class="qp">▶</span>
+      </button>
+    </div>
+    <div class="home-foot">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <p>忘記你在學習，專注於贏得勝利 ✨</p>
+    </div>
+  </section>
+
+  <!-- ================= 模式選擇 ================= -->
+  <section class="screen" id="scr-mode-select">
+    <h1 style="font-size:36px;font-weight:800;color:var(--ps-blue);margin-bottom:20px;text-shadow: 0 2px 4px rgba(0,0,0,0.05);">選擇遊戲模式</h1>
+    <button class="btn" id="btn-party-mode" style="margin-bottom:15px; width: 200px;">派對模式 🎉</button>
+    <button class="btn ghost" id="btn-freeplay-mode" style="width: 200px;">自選關卡 🕹️</button>
+
+    <div id="party-mode-selection" style="display:none; flex-direction:column; align-items:center; margin-top:20px;">
+      <h2 style="font-size:24px;font-weight:800;color:var(--ink);margin-bottom:15px;">選擇 3 個關卡</h2>
+      <div id="party-selected-games" style="display:flex; gap:10px; margin-bottom:20px;">
+        <div class="selected-slot"></div>
+        <div class="selected-slot"></div>
+        <div class="selected-slot"></div>
+      </div>
+      <div id="party-rolling-text" style="font-size:14px; font-weight:700; color:var(--red); margin-top:10px; height:20px;"></div>
+      <button class="btn ghost" id="btn-cancel-party" style="margin-top:30px; display:none;">取消</button>
+    </div>
+  </section>
+
+
+  <!-- ================= 介紹畫面 ================= -->
+  <section class="screen active" id="scr-intro">
+    <!-- 封面圖片、標題和副標題現在已透過 CSS 設定為背景 -->
+    <!-- <h1>PS <span class="hl">派對大亂鬥</span></h1> -->
+    <!-- <div class="sub">工具大作戰・在 Photoshop 介面裡邊玩邊學</div> -->
+    <div class="tap-start">點擊螢幕任意處開始</div>
+  </section>
+
+  <!-- ================= GAME 1 ================= -->
+  <section class="screen ps" id="scr-g1">
+    <div class="psbar">
+      <button class="exit" data-exit>✕</button>
+      <div class="psmenu">檔案　編輯　影像　圖層　選取　濾鏡　視窗</div>
+      <div class="pts" id="g1-pts"><b id="g1-score">0</b><small>PTS</small></div>
+      <div class="ctimer"><svg viewBox="0 0 72 72"><circle class="trk" cx="36" cy="36" r="30"/><circle class="prg" id="g1-prg" cx="36" cy="36" r="30"/></svg><b id="g1-clock">10</b></div>
+    </div>
+    <div class="optbar" id="g1-opt"></div>
+    <div class="psmain">
+      <div class="pstools" id="g1-tools"></div>
+      <div class="psdoc">
+        <div class="doctab"><span>🍎 水果去背.psd <i>@ 100%（RGB/8）</i></span></div>
+        <div class="canvaswrap">
+          <div class="canvas transp" id="g1-area">
+            <div class="pickbanner" id="g1-pick">
+              <span class="arrow">👈</span>
+              <div class="big">在左側工具列<br>點選 🪄 <b>魔術棒工具</b></div>
+              <small>選好工具，倒數才開始！</small>
+            </div>
+          </div>
+          <div class="readygo" id="g1-go"><b>READY</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="statusbar">100%　｜　文件：402 × 874 像素（RGB/8）　｜　連續去背 3 顆觸發 Combo 加分！</div>
+    <div class="hintbar">🪄 接住掉落的水果去背 +10、連擊×3 再 +30　⚠️ 棋盤格＝已透明，點了 −5 斷連擊</div>
+  </section>
+
+  <!-- ================= GAME 2 ================= -->
+  <section class="screen ps" id="scr-g2">
+    <div class="psbar">
+      <button class="exit" data-exit>✕</button>
+      <div class="psmenu">檔案　編輯　影像　圖層　選取　濾鏡　視窗</div>
+      <div class="pts" id="g2-pts"><b id="g2-score">0</b><small>PTS</small></div>
+      <div class="ctimer"><svg viewBox="0 0 72 72"><circle class="trk" cx="36" cy="36" r="30"/><circle class="prg" id="g2-prg" cx="36" cy="36" r="30"/></svg><b id="g2-clock">20</b></div>
+    </div>
+    <div class="optbar" id="g2-opt"></div>
+    <div class="psmain">
+      <div class="pstools" id="g2-tools"></div>
+      <div class="psdoc">
+        <div class="doctab"><span>🃏 圖層大戰.psd <i>@ 100%</i></span></div>
+        <div class="canvaswrap">
+          <div class="canvas transp" id="g2-stage"></div>
+          <div class="readygo" id="g2-go"><b>READY</b></div>
+        </div>
+      </div>
+      <div class="pslayers">
+        <div class="phead">圖層</div>
+        <div class="pops">正常　∨　不透明度：100%</div>
+        <div id="g2-list"></div>
+        <div class="pfoot"><span>🔗</span><span>＋</span><span>🗑</span></div>
+      </div>
+    </div>
+    <div class="statusbar">100%　｜　提示：圖層面板「越上面」＝畫面「越前面」</div>
+    <div class="hintbar">🗂️ 把圖層拖到最頂端，待在最上層就得分！ <button class="ps-skip" onclick="skipLevel()">跳過關卡 ⏭</button></div>
+  </section>
+
+  <!-- ================= GAME 3 ================= -->
+  <section class="screen ps" id="scr-g3">
+    <div class="psbar">
+      <button class="exit" data-exit>✕</button>
+      <div class="psmenu">檔案　編輯　影像　圖層　選取　濾鏡　視窗</div>
+      <div class="pts" id="g3-pts"><b id="g3-score">0</b><small>PTS</small></div>
+      <div class="ctimer"><svg viewBox="0 0 72 72"><circle class="trk" cx="36" cy="36" r="30"/><circle class="prg" id="g3-prg" cx="36" cy="36" r="30"/></svg><b id="g3-clock">25</b></div>
+    </div>
+    <div class="optbar" id="g3-opt"></div>
+    <div class="cleanrow"><small>清潔度</small><div class="ctrack"><i id="g3-cleanbar"></i></div><b id="g3-cleanpct">0%</b></div>
+    <div class="psmain">
+      <div class="pstools" id="g3-tools"></div>
+      <div class="psdoc">
+        <div class="doctab"><span>🧽 擦泥巴大作戰.psd <i>@ 100%</i></span></div>
+        <div class="canvaswrap">
+          <div class="canvas scene" id="g3-frame">
+            <div id="g3-boss"><img src="../泥巴怪.png" alt="泥巴怪" style="width:100%; height:100%; object-fit:contain; transform: scaleX(-1);"></div>
+            <div id="g3-target"><span class="ring"></span><span class="alt">Alt 取樣</span></div>
+            <div id="g3-cursor"></div>
+            <div class="pickbanner" id="g3-pick">
+              <span class="arrow">👈</span>
+              <div class="big">在左側工具列<br>點選 💠 <b>仿製印章工具</b></div>
+              <small>選好工具，倒數才開始！</small>
+            </div>
+          </div>
+          <div class="readygo" id="g3-go"><b>READY</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="statusbar">100%　｜　提示：仿製印章要按住 Alt 才能塗抹　｜　擦掉一塊 +50</div>
+    <div class="hintbar">💠 按住 Alt 並來回塗抹泥巴，清潔度衝 100%！ <button class="ps-skip" onclick="skipLevel()">跳過關卡 ⏭</button></div>
+  </section>
+
+  <!-- ================= GAME 4 ================= -->
+  <section class="screen ps" id="scr-g4">
+    <div class="psbar">
+      <button class="exit" data-exit>✕</button>
+      <div class="psmenu">檔案　編輯　影像　圖層　選取　濾鏡　視窗</div>
+      <div class="pts" id="g4-pts"><b id="g4-score">0</b><small>PTS</small></div>
+      <div class="ctimer"><svg viewBox="0 0 72 72"><circle class="trk" cx="36" cy="36" r="30"/><circle class="prg" id="g4-prg" cx="36" cy="36" r="30"/></svg><b id="g4-clock">20</b></div>
+    </div>
+    <div class="optbar" id="g4-opt"></div>
+    <div class="psmain">
+      <div class="pstools" id="g4-tools"></div>
+      <div class="psdoc">
+        <div class="doctab"><span>🎨 色彩大師.psd <i>@ 100% (RGB/8)</i></span></div>
+        <div class="canvaswrap">
+          <div class="canvas transp" id="g4-area">
+            <div id="g4-target-box"><div id="g4-target-color"></div><span style="position:absolute;bottom:5px;right:10px;font-size:10px;color:#FFF;font-weight:700;text-shadow:0 1px 2px #000">題目：目標顏色</span></div>
+            <div id="g4-match-ui">
+              <div id="g4-preview-color"></div>
+              <div class="g4-slider-row"><label>R</label><input type="range" id="g4-r" min="0" max="255" class="g4-slider"></div>
+              <div class="g4-slider-row"><label>G</label><input type="range" id="g4-g" min="0" max="255" class="g4-slider"></div>
+              <div class="g4-slider-row"><label>B</label><input type="range" id="g4-b" min="0" max="255" class="g4-slider"></div>
+              <button class="btn" id="g4-submit">套用色彩 (提交)</button>
+            </div>
+          </div>
+          <div class="readygo" id="g4-go"><b>READY</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="hintbar">🎨 拖動 RGB 滑桿讓預覽色與目標一致！ <button class="ps-skip" onclick="skipLevel()">跳過關卡 ⏭</button></div>
+  </section>
+
+  <!-- ================= GAME 5 ================= -->
+  <section class="screen ps" id="scr-g5">
+    <div class="psbar">
+      <button class="exit" data-exit>✕</button>
+      <div class="psmenu">檔案　編輯　影像　圖層　選取　濾鏡　視窗</div>
+      <div class="pts" id="g5-pts"><b id="g5-score">0</b><small>PTS</small></div>
+      <div class="ctimer"><svg viewBox="0 0 72 72"><circle class="trk" cx="36" cy="36" r="30"/><circle class="prg" id="g5-prg" cx="36" cy="36" r="30"/></svg><b id="g5-clock">30</b></div>
+    </div>
+    <div class="optbar" id="g5-opt"></div>
+    <div class="psmain">
+      <div class="pstools" id="g5-tools"></div>
+      <div class="psdoc">
+        <div class="doctab"><span>🖌️ 繪圖練習.psd <i>@ 100% (RGB/8)</i></span></div>
+        <div class="canvaswrap">
+          <div class="canvas transp" id="g5-canvas">
+            <div id="g5-target-circle"></div>
+            <div class="pickbanner" id="g5-pick">
+              <span class="arrow">👈</span>
+              <div class="big">在左側工具列<br>點選 🖌️ <b>筆刷工具</b></div>
+              <small>選好工具，倒數才開始！</small>
+            </div>
+          </div>
+          <div class="readygo" id="g5-go"><b>READY</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="hintbar">🖌️ 使用筆刷工具 (B) 沿著虛線圓形繪製！ <button class="ps-skip" onclick="skipLevel()">跳過關卡 ⏭</button></div>
+  </section>
+
+  <!-- ================= GAME 6 ================= -->
+  <section class="screen ps" id="scr-g6">
+    <div class="psbar">
+      <button class="exit" data-exit>✕</button>
+      <div class="psmenu">檔案　編輯　影像　圖層　選取　濾鏡　視窗</div>
+      <div class="pts" id="g6-pts"><b id="g6-score">0</b><small>PTS</small></div>
+      <div class="ctimer"><svg viewBox="0 0 72 72"><circle class="trk" cx="36" cy="36" r="30"/><circle class="prg" id="g6-prg" cx="36" cy="36" r="30"/></svg><b id="g6-clock">20</b></div>
+    </div>
+    <div class="optbar" id="g6-opt"></div>
+    <div class="psmain">
+      <div class="pstools" id="g6-tools"></div>
+      <div class="psdoc">
+        <div class="doctab"><span>🐟 海底世界.psd <i>@ 100% (RGB/8)</i></span></div>
+        <div class="canvaswrap">
+          <div class="canvas scene" id="g6-canvas" style="background:linear-gradient(#1e3c72, #2a5298)">
+            <svg id="g6-svg" width="100%" height="100%"><polyline id="g6-lasso-path" points=""></polyline></svg>
+            <div class="pickbanner" id="g6-pick">
+              <span class="arrow">👈</span>
+              <div class="big">在左側工具列<br>點選 ➿ <b>套索工具</b></div>
+              <small>選好工具，倒數才開始！</small>
+            </div>
+          </div>
+          <div class="readygo" id="g6-go"><b>READY</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="hintbar">➿ 使用套索工具 (L) 在魚的周圍畫一個圈來捕捉它們！ <button class="ps-skip" onclick="skipLevel()">跳過關卡 ⏭</button></div>
+  </section>
+
+  <!-- ================= 教學 ================= -->
+  <div class="overlay" id="ov-tut">
+    <div class="ov-card">
+      <span class="gamebadge" id="tut-badge">GAME 1</span>
+      <h2 id="tut-name">極速魔術棒</h2>
+      <div class="slo" id="tut-slogan">看誰去背快！</div>
+      <div class="ov-sec ui"><div class="h">🖥️ Photoshop 介面任務</div><div class="b" id="tut-ui"></div></div>
+      <div class="ov-sec play"><div class="h">🎲 玩法</div><div class="b" id="tut-play"></div></div>
+      <div class="ov-sec skill"><div class="h">🛠 PS 知識點</div><div class="b" id="tut-skill"></div></div>
+      <button class="btn" id="tut-start">進入 Photoshop ▶</button>
+    </div>
+  </div>
+
+  <!-- ================= 結算 ================= -->
+  <div class="overlay" id="ov-res">
+    <div class="ov-card">
+      <span class="gamebadge" id="res-badge" style="background:var(--red)">GAME 1</span>
+      <h2 id="res-title" style="text-align:center">🎉 遊戲結束！</h2>
+      <div id="res-stars"><span>⭐</span></div>
+      <div id="res-score">0</div>
+      <div class="res-label" id="res-label">POINTS</div>
+      <div id="res-best">🏆 最佳紀錄 0 分</div>
+      <div id="res-achv">🏆 成就解鎖</div>
+      <div class="ov-sec skill" id="res-learn"><div class="h">📚 你剛剛學到了</div><div class="b" id="res-learn-b"></div></div>
+      <div class="res-btns">
+        <button class="btn" id="res-again">重新遊玩 ↻</button>
+        <div class="row2">
+          <button class="btn ghost" id="res-home">返回選單</button>
+          <button class="btn yellow" id="res-share">分享成績 📤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+"use strict";
+/* ================= 共用 ================= */
+var $ = function(s){ return document.querySelector(s); };
+var rnd = function(a,b){ return a + Math.random()*(b-a); };
+var ri = function(a,b){ return Math.floor(rnd(a,b+1)); };
+var pick = function(arr){ return arr[Math.floor(Math.random()*arr.length)]; };
+var clamp = function(v,a,b){ return Math.max(a,Math.min(b,v)); };
+
+var best = { g1:0, g2:0, g3:0, g4:0, g5:0, g6:0 };
+var currentGame = null;
+var lastResult = null;
+
+/* ===== 難度系統（取自 p5 版 DIFFICULTY_CONFIG，已調校） ===== */
+var DIFF = "normal";
+var DIFF_CFG = {
+  easy: {
+    label:"😊 簡單",
+    g1:{ interval:900, size:80, vy0:0.9, acc:0.040, trap:0.12 },
+    g2:{ ai:[1400,2200] },
+    g3:{ initial:3, spawn:[2600,3400], maxMuds:6, brush:64, power:13 }
+  },
+  normal: {
+    label:"😼 普通",
+    g1:{ interval:650, size:66, vy0:1.1, acc:0.055, trap:0.18 },
+    g2:{ ai:[850,1500] },
+    g3:{ initial:5, spawn:[1800,2600], maxMuds:7, brush:52, power:10 }
+  },
+  hard: {
+    label:"😈 困難",
+    g1:{ interval:480, size:54, vy0:1.4, acc:0.075, trap:0.24 },
+    g2:{ ai:[500,950] },
+    g3:{ initial:6, spawn:[1300,2000], maxMuds:8, brush:42, power:8 }
+  }
+};
+document.querySelectorAll("#diff-seg button").forEach(function(b){
+  b.addEventListener("click", function(){
+    DIFF = b.dataset.d;
+    document.querySelectorAll("#diff-seg button").forEach(function(x){ x.classList.toggle("sel", x===b); });
+    toast("難度：" + DIFF_CFG[DIFF].label);
+    sndSelect();
+  });
+});
+
+/* 音效 */
+var actx = null;
+function ensureAudio(){
+  if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ actx=null; } }
+  if(actx && actx.state === "suspended"){ actx.resume(); }
+}
+function snd(freq, dur, type, vol){
+  if(!actx) return;
+  dur = dur||0.08; type = type||"square"; vol = (vol===undefined)?0.12:vol;
+  var o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(); o.stop(actx.currentTime + dur);
+}
+function sndGood(){ snd(720,.07,"square"); setTimeout(function(){snd(1080,.09,"square");},60); }
+function sndBad(){ snd(180,.16,"sawtooth",.14); }
+function sndWin(){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){snd(f,.14,"triangle",.16);}, i*110); }); }
+function sndTick(){ snd(950,.04,"square",.06); }
+function sndSelect(){ snd(880,.05,"triangle",.1); }
+function sndCombo(){ [659,880,1175].forEach(function(f,i){ setTimeout(function(){snd(f,.1,"triangle",.16);}, i*70); }); }
+
+/* Toast */
+var toastT = null;
+function toast(msg){
+  var t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){ t.classList.remove("show"); }, 1500);
+}
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
+  $("#"+id).classList.add("active");
+}
+
+/* 計時器管理 */
+function TimerBag(){ this.list = []; }
+TimerBag.prototype.every = function(fn, ms){ var id = setInterval(fn, ms); this.list.push({i:1,id:id}); return id; };
+TimerBag.prototype.after = function(fn, ms){ var id = setTimeout(fn, ms); this.list.push({i:0,id:id}); return id; };
+TimerBag.prototype.clearAll = function(){
+  this.list.forEach(function(t){ t.i ? clearInterval(t.id) : clearTimeout(t.id); });
+  this.list = [];
+};
+
+/* 圓形倒數 */
+var CIRC = 2 * Math.PI * 30;
+function resetClock(clockEl, prgEl, total){
+  clockEl.textContent = Math.ceil(total);
+  prgEl.style.strokeDashoffset = 0;
+  prgEl.style.stroke = "var(--teal)";
+}
+function runCountdown(bag, total, clockEl, prgEl, onEnd){
+  var left = total;
+  resetClock(clockEl, prgEl, total);
+  bag.every(function(){
+    left -= 0.1;
+    if(left < 0) left = 0;
+    clockEl.textContent = Math.ceil(left);
+    var frac = left / total;
+    prgEl.style.strokeDashoffset = CIRC * (1 - frac);
+    prgEl.style.stroke = frac > .5 ? "var(--teal)" : (frac > .25 ? "#F2C94C" : "var(--red)");
+    if(left <= 3.05 && left > 0 && Math.abs(left - Math.round(left)) < 0.06) sndTick();
+    if(left <= 0){ onEnd(); }
+  }, 100);
+}
+
+/* READY → GO! 過場 */
+function readyGo(bag, goEl, cb){
+  var b = goEl.querySelector("b");
+  b.textContent = "READY";
+  goEl.classList.add("show");
+  snd(440,.12,"triangle",.14);
+  bag.after(function(){
+    b.textContent = "GO!";
+    b.style.animation = "none"; void b.offsetWidth; b.style.animation = "";
+    snd(880,.16,"triangle",.16);
+    bag.after(function(){
+      goEl.classList.remove("show");
+      cb();
+    }, 480);
+  }, 520);
+}
+
+/* 粒子爆炸 */
+function burst(container, x, y, colors, n){
+  n = n || 10;
+  for(var i = 0; i < n; i++){
+    var p = document.createElement("div");
+    p.className = "particle";
+    p.style.background = pick(colors);
+    p.style.left = x + "px"; p.style.top = y + "px";
+    p.style.setProperty("--dx", rnd(-60,60).toFixed(0) + "px");
+    p.style.setProperty("--dy", rnd(-70,40).toFixed(0) + "px");
+    container.appendChild(p);
+    (function(el){ setTimeout(function(){ el.remove(); }, 600); })(p);
+  }
+}
+function bigPop(container, text){
+  var b = document.createElement("div");
+  b.className = "bigpop";
+  b.textContent = text;
+  container.appendChild(b);
+  setTimeout(function(){ b.remove(); }, 820);
+}
+function shakeEl(el){
+  el.classList.remove("shakeit"); void el.offsetWidth; el.classList.add("shakeit");
+}
+function bumpScore(ptsEl){
+  ptsEl.classList.remove("bump"); void ptsEl.offsetWidth; ptsEl.classList.add("bump");
+}
+
+/* ================= Photoshop 工具列 ================= */
+var TOOLS = [
+  { id:"move",    g:"✥",  name:"移動工具",        key:"V", opt:"自動選取：圖層　☑ 顯示變形控制項" },
+  { id:"marquee", g:"⬚",  name:"矩形選取畫面工具", key:"M", opt:"羽化：0 px　樣式：正常" },
+  { id:"lasso",   g:"➿",  name:"套索工具",        key:"L", opt:"羽化：0 px　☑ 消除鋸齒" },
+  { id:"wand",    g:"🪄", name:"魔術棒工具",      key:"W", opt:"容許度：32　☑ 消除鋸齒" },
+  { id:"crop",    g:"✂️", name:"裁切工具",        key:"C", opt:"比例：原始比例" },
+  { id:"eyedrop", g:"💧", name:"滴管工具",        key:"I", opt:"樣本尺寸：點狀樣本" },
+  { id:"heal",    g:"🩹", name:"修復筆刷工具",    key:"J", opt:"模式：正常　來源：取樣" },
+  { id:"brush",   g:"🖌", name:"筆刷工具",        key:"B", opt:"尺寸：60px　不透明度：100%" },
+  { id:"stamp",   g:"💠", name:"仿製印章工具",    key:"S", opt:"樣本：目前圖層　按 Alt 取樣" },
+  { id:"text",    g:"T",  name:"文字工具",        key:"T", opt:"字體：思源黑體　60pt", tt:true },
+  { id:"zoom",    g:"🔍", name:"縮放顯示工具",    key:"Z", opt:"100%　符合螢幕" }
+];
+function makeToolbar(container, optEl, extraOptHTML, onChange){
+  container.innerHTML = "";
+  var sel = null, btns = {};
+  TOOLS.forEach(function(t){
+    var b = document.createElement("button");
+    b.className = "tbtn";
+    b.innerHTML = t.tt ? '<span class="tt">T</span>' : t.g;
+    b.title = t.name + "（" + t.key + "）";
+    b.addEventListener("click", function(){ api.select(t.id, true); });
+    container.appendChild(b);
+    btns[t.id] = b;
+  });
+  var api = {
+    select: function(id, byUser){
+      sel = id;
+      TOOLS.forEach(function(t){ btns[t.id].classList.toggle("sel", t.id===id); });
+      var t = TOOLS.filter(function(x){ return x.id===id; })[0];
+      optEl.innerHTML = '<span class="tglyph">' + (t.tt?'<b class="tt">T</b>':t.g) + '</span> ' +
+        t.name + '　<span class="osep">|</span>　' + t.opt +
+        '<span class="oright">' + (extraOptHTML||"") + '</span>';
+      if(byUser) sndSelect();
+      if(onChange) onChange(id, !!byUser);
+    },
+    get: function(){ return sel; },
+    mark: function(id, on){ btns[id].classList.toggle("need", !!on); }
+  };
+  return api;
+}
+function toolName(id){
+  var t = TOOLS.filter(function(x){ return x.id===id; })[0];
+  return t ? t.name : id;
+}
+
+/* ================= 遊戲設定 ================= */
+var GAMES = {
+  g1: {
+    n:3, name:"極速魔術棒", slogan:"看誰去背快！", color:"var(--red)", icon:"🪄", time:10,
+    ui:"先在左側「工具列」點選 🪄 魔術棒工具（快捷鍵 W），倒數才開始。遊戲中工具可能被「打亂」跳成筆刷，要趕快切回來！",
+    play:"10 秒極速對決！水果會從上方掉下來，用魔術棒在落地前點擊去背（+10）。連續去背 3 顆觸發 🔥 Combo 再 +30！棋盤格＝已透明，點了 −5 還會斷連擊。",
+    skill:"魔術棒會一次選取「顏色相近」的整片區域，這就是一鍵去背的原理；去背後露出棋盤格＝透明。",
+    learn:"工具列位置：魔術棒（W）。魔術棒＝依顏色相近度選取；棋盤格＝透明像素。",
+    stars:[60,120], achv:"去背大師！"
+  },
+  g2: {
+    n:1, name:"圖層疊疊樂", slogan:"精準對位！", color:"var(--teal)", icon:"🗂️", time:20,
+    ui:"這關使用右側的「圖層面板」——觀察提示要求的位置，並將你的圖層拖曳到正確的層級。",
+    play:"3 個 CPU 會不斷攪亂圖層順序！觀察提示（例如：移至第 2 層），在面板調整你的位置。待在正確位置就會持續得分。限時 20 秒！",
+    skill:"圖層順序管理。在 PS 中，正確的層級關係是合成影像的基礎。",
+    learn:"圖層面板中，第 1 層（最上面）會擋住後面的圖層。精準控制層級才能完成修圖。",
+    stars:[80,140], achv:"圖層對位專家！"
+  },
+  g3: {
+    n:6, name:"仿製印章", slogan:"把臉擦乾淨！", color:"#F2B71F", icon:"💠", time:25,
+    ui:"先在左側工具列點選 💠 仿製印章工具（快捷鍵 S），倒數才開始。選項列會顯示墨水量——沒墨水就要重新 Alt 取樣！",
+    play:"大魔王會一直吐泥巴！點「Alt 取樣」補墨水，再用手指來回塗抹泥巴，泥巴會越擦越淡，擦掉一整塊 +50。把上方「清潔度」衝到 100%！限時 25 秒！",
+    skill:"仿製印章不是橡皮擦：要先按住 Alt（Mac 是 Option）點一下「乾淨來源」，工具才會把那裡的像素複製過來蓋住髒污。",
+    learn:"工具列位置：仿製印章（S）。流程＝先 Alt 取樣來源，再把乾淨像素「蓋」到要修補的地方。",
+    stars:[150,300], achv:"修圖小天才！"
+  },
+  g4: {
+    n:4, name:"色彩大師", slogan:"精準色彩對比！", color:"#2D8CEB", icon:"🌈", time:20,
+    ui:"Photoshop 的顏色面板！使用 R、G、B 滑桿來調配色彩，這是設計師最基礎的技能。",
+    play:"觀察上方「目標顏色」，拖動下方的三個滑桿（紅、綠、藍）來調整預覽色。調好後點擊「套用色彩」提交。越接近目標，分數越高！",
+    skill:"RGB 是色光三原色。紅(R)、綠(G)、藍(B)各佔 8 位元（0-255），混合後可產生 1677 萬種顏色。",
+    learn:"RGB 混合邏輯：R+G=黃、R+B=洋紅、G+B=青、三者皆滿=白。",
+    stars:[100,200], achv:"色彩大師！"
+  },
+  g5: {
+    n:5, name:"筆刷大師", slogan:"精準繪製圓形！", color:"#FF6B6B", icon:"🖌️", time:30,
+    ui:"Photoshop 的筆刷工具！觀察目標圓形，使用筆刷沿著輪廓繪製。",
+    play:"畫布上會出現一個圓形輪廓。使用滑鼠拖曳來繪製，盡量貼合輪廓。繪製完成後鬆開滑鼠，系統會根據準確度給分。目標是 30 秒內完成至少 10 個圖形！",
+    skill:"筆刷工具的精準控制是繪圖的基礎。練習手眼協調，讓筆觸更穩定。",
+    learn:"筆刷工具（B）可以自由繪製。繪製路徑的平滑度與準確性，是數位繪圖的關鍵。",
+    stars:[500,1000], achv:"繪圖高手！"
+  },
+  g6: {
+    n:2, name:"套索捕魚", slogan:"圈住游動的魚！", color:"#4facfe", icon:"➿", time:20,
+    ui:"點選左側工具列的 ➿ 套索工具 (L)，倒數即刻開始。",
+    play:"魚群會在海底游動，按住滑鼠或手指畫出一個封閉的圈。當你放開時，圈內的魚都會被捕獲得分！",
+    skill:"套索工具 (Lasso) 用於手動繪製不規則選取區。選取區內的像素可以被編輯或移動。",
+    learn:"工具列位置：套索工具 (L)。功能：手繪不規則選取區。封閉路徑後會形成選取範圍。",
+    stars:[150,400], achv:"捕魚達人！"
+  }
+};
+
+function refreshBest(){
+  ["g1","g2","g3","g4","g5","g6"].forEach(function(g){
+    if($("#best-"+g)) $("#best-"+g).textContent = "🏆 最佳 " + best[g] + " 分";
+  });
+}
+
+/* ================= 流程 ================= */
+function openTutorial(g){
+  ensureAudio();
+  currentGame = g;
+  var cfg = GAMES[g];
+
+  if (isPartyMode) {
+    $("#tut-badge").textContent = "進度 " + (currentPartyGameIndex + 1) + " / " + partyGames.length + "・" + DIFF_CFG[DIFF].label;
+  } else {
+    $("#tut-badge").textContent = "GAME " + cfg.n + "・" + DIFF_CFG[DIFF].label;
+  }
+  $("#tut-badge").style.background = cfg.color;
+  $("#tut-name").textContent = cfg.name;
+  $("#tut-slogan").textContent = cfg.slogan;
+  $("#tut-ui").textContent = cfg.ui;
+  $("#tut-play").textContent = cfg.play;
+  $("#tut-skill").textContent = cfg.skill;
+  $("#ov-tut").classList.add("show");
+  snd(660,.06,"triangle");
+}
+$("#tut-start").addEventListener("click", function(){
+  $("#ov-tut").classList.remove("show");
+  startGame(currentGame);
+});
+document.querySelectorAll(".mcard").forEach(function(c){
+  c.addEventListener("click", function(){
+    openTutorial(c.dataset.game);
+  });
+});
+document.querySelectorAll("[data-exit]").forEach(function(b){
+  b.addEventListener("click", function(){
+    if (isPartyMode) {
+      stopAllGames();
+      showPartyResult(); // Show party result if in party mode
+    } else if (isFreeplayMode) { // Added for freeplay mode
+      stopAllGames();
+      $("#ov-res").classList.remove("show");
+      showScreen("scr-mode-select");
+    } else {
+      stopAllGames();
+      $("#ov-res").classList.remove("show");
+      showScreen("scr-home");
+    }
+    isPartyMode = false; // Reset party mode flag
+    isFreeplayMode = false; // Reset freeplay mode flag
+  });
+});
+
+function startGame(g){
+  showScreen("scr-"+g);
+  
+  // 更新 Photoshop 菜單列顯示進度 (僅派對模式)
+  var menu = $("#scr-" + g + " .psmenu");
+  var baseMenu = "檔案　編輯　影像　圖層　選取　濾鏡　視窗";
+  if (isPartyMode) {
+    if (menu) menu.textContent = "[" + (currentPartyGameIndex + 1) + "/" + partyGames.length + "] " + baseMenu;
+  } else {
+    if (menu) menu.textContent = baseMenu; // 自由模式恢復原樣
+  }
+
+  // 根據是否為派對模式顯示/隱藏跳過按鈕
+  document.querySelectorAll(".ps-skip").forEach(btn => btn.style.display = isPartyMode ? "inline-block" : "none");
+  if(g==="g1") G1.start();
+  if(g==="g2") G2.start();
+  if(g==="g3") G3.start();
+  if(g==="g4") G4.start();
+  if(g==="g5") G5.start();
+  if(g==="g6") G6.start();
+}
+function stopAllGames(){ G1.stop(); G2.stop(); G3.stop(); G4.stop(); G5.stop(); G6.stop(); } // Stop Game 5
+
+function endGame(g, score){
+  if (isPartyMode) {
+    partyScores.push({ game: g, score: score });
+    currentPartyGameIndex++;
+    if (currentPartyGameIndex < partyGames.length) {
+      // 派對模式：不再顯示教學，直接跳下一關
+      toast("🎨 切換工具！下一關：" + GAMES[partyGames[currentPartyGameIndex]].name);
+      startGame(partyGames[currentPartyGameIndex]);
+    } else {
+      showPartyResult();
+    }
+    return;
+  }
+  var cfg = GAMES[g];
+  var isNew = score > best[g];
+  if(isNew) best[g] = score;
+  refreshBest();
+  showResult({ party:false, g:g, score:score, isNew:isNew });
+}
+
+function showResult(o){
+  var ov = $("#ov-res");
+  ov.classList.remove("grade1","grade2","grade3");
+  var cfg = GAMES[o.g];
+  var stars = o.score >= cfg.stars[1] ? 3 : (o.score >= cfg.stars[0] ? 2 : 1);
+  lastResult = { party:false, g:o.g, score:o.score, stars:stars };
+  $("#res-badge").textContent = "GAME " + cfg.n + "・" + cfg.name;
+  $("#res-badge").style.background = cfg.color;
+  $("#res-title").textContent = "🎉 遊戲結束！";
+  $("#res-label").textContent = "POINTS";
+  $("#res-best").textContent = o.isNew ? "🏆 新紀錄！" : ("🏆 最佳紀錄 " + best[o.g] + " 分");
+  var achv2 = $("#res-achv");
+  if(stars >= 2){ achv2.textContent = "🏆 成就解鎖：" + cfg.achv; achv2.classList.add("show"); }
+  else { achv2.classList.remove("show"); }
+  $("#res-learn-b").textContent = cfg.learn;
+  $("#res-again").textContent = "重新遊玩 ↻";
+
+  if (o.party) { // Special handling for party mode results
+    $("#res-score").textContent = o.totalScore;
+  } else {
+    $("#res-score").textContent = o.score;
+  }
+  $("#res-stars").innerHTML = "<span>⭐</span>".repeat(stars);
+  ov.classList.add("grade" + stars, "show");
+  sndWin();
+}
+$("#res-home").addEventListener("click", function(){
+  $("#ov-res").classList.remove("show");
+  isPartyMode = false; // 回到首頁時關閉派對模式開關
+  currentPartyGameIndex = 0; // 重置進度索引
+  showScreen("scr-home");
+});
+$("#res-again").addEventListener("click", function(){
+  if (isPartyMode) {
+    $("#ov-res").classList.remove("show"); // Hide the results overlay
+    startRandomPartyMode(); // Restart the party mode from random selection
+  } else {
+    $("#ov-res").classList.remove("show");
+    startGame(currentGame);
+  }
+});
+$("#res-share").addEventListener("click", function(){
+  if(!lastResult) return;
+  var starTxt = "⭐".repeat(lastResult.stars);
+  var txt = "我在《PS 派對大亂鬥》的「" + GAMES[lastResult.g].name + "」拿到 " + lastResult.score + " 分 " + starTxt + "，邊玩邊學 Photoshop！";
+  if(navigator.share){
+    navigator.share({ text: txt }).catch(function(){});
+  } else if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){ toast("📋 成績已複製，貼上分享吧！"); })
+      .catch(function(){ toast(txt); });
+  } else { toast(txt); }
+});
+
+function floatPt(container, x, y, text, good){
+  var f = document.createElement("div");
+  f.className = "floatpt " + (good ? "good" : "bad");
+  f.textContent = text;
+  f.style.left = x + "px";
+  f.style.top = y + "px";
+  container.appendChild(f);
+  setTimeout(function(){ f.remove(); }, 720);
+}
+
+/* 跳過關卡邏輯 */
+function skipLevel(){
+  if(!confirm("確定要跳過這關嗎？（分數將計為 0）")) return;
+  stopAllGames();
+  endGame(currentGame, 0);
+}
+window.skipLevel = skipLevel;
+
+/* ================= 模式選擇邏輯 ================= */
+var isPartyMode = false;
+var isPartyModeSelection = false;
+var partyGames = []; // Stores game IDs for party mode
+var isFreeplayMode = false; // Added to track freeplay mode
+var partyScores = []; // Stores scores for each game in party mode
+var currentPartyGameIndex = 0;
+
+$("#btn-party-mode").addEventListener("click", function(){
+  ensureAudio();
+  sndSelect();
+  startRandomPartyMode();
+});
+
+$("#btn-freeplay-mode").addEventListener("click", function(){
+  isFreeplayMode = true; // Set freeplay mode flag
+  isPartyMode = false;   // 確保關閉派對模式
+  currentPartyGameIndex = 0; 
+  showScreen("scr-home");
+  sndSelect();
+});
+
+$("#btn-home-back").addEventListener("click", function(){
+  isFreeplayMode = false;
+  showScreen("scr-mode-select");
+  sndSelect();
+});
+
+$("#btn-cancel-party").addEventListener("click", function(){
+  partyGames = [];
+  $("#party-mode-selection").style.display = "none";
+  $("#btn-party-mode").style.display = "block";
+  $("#btn-freeplay-mode").style.display = "block";
+  sndSelect();
+});
+
+function startRandomPartyMode(){
+  isPartyMode = true;
+  partyGames = [];
+  partyScores = [];
+  currentPartyGameIndex = 0;
+  showScreen("scr-mode-select"); // 確保切換回模式選擇頁面
+
+  $("#btn-party-mode").style.display = "none";
+  $("#btn-freeplay-mode").style.display = "none";
+  $("#party-mode-selection").style.display = "flex";
+  $("#party-mode-selection h2").textContent = "正在隨機挑選關卡...";
+  $("#party-rolling-text").textContent = "";
+
+  var availablePool = ["g1", "g2", "g3", "g4", "g5", "g6"];
+  while(partyGames.length < 3){
+    var g = pick(availablePool);
+    if(!partyGames.includes(g)) partyGames.push(g);
+  }
+
+  var slots = document.querySelectorAll("#party-selected-games .selected-slot");
+  slots.forEach(function(s){ s.innerHTML = ""; s.classList.remove("filled"); });
+
+  // 模擬「抽取」動畫
+  partyGames.forEach(function(gid, i){
+    setTimeout(function(){
+      var cfg = GAMES[gid];
+      var slot = slots[i];
+      slot.innerHTML = '<div class="icon" style="background:'+cfg.color+'">'+cfg.icon+'</div>';
+      slot.classList.add("filled");
+      $("#party-rolling-text").textContent = "選中： " + cfg.name + "！";
+      sndGood();
+
+      if(i === 2){
+        setTimeout(function(){
+          $("#party-mode-selection").style.display = "none";
+          // 重置按鈕狀態以便下次進入
+          $("#btn-party-mode").style.display = "block";
+          $("#btn-freeplay-mode").style.display = "block";
+          startPartyModeGames();
+        }, 1200);
+      }
+    }, 800 * (i + 1));
+  });
+}
+
+function startPartyModeGames(){
+  $("#ov-res").classList.remove("show");
+  openTutorial(partyGames[currentPartyGameIndex]); // Show tutorial before starting the game
+}
+
+function showPartyResult(){
+  var totalScore = partyScores.reduce(function(sum, s){ return sum + s.score; }, 0);
+  var avgScore = totalScore / partyGames.length;
+  
+  // 頒獎典禮評級邏輯
+  var rank = "C", title = "🎨 實習生", stars = 1;
+  if(avgScore >= 250) { rank = "S"; title = "👑 神之手"; stars = 3; }
+  else if(avgScore >= 160) { rank = "A"; title = "🏆 首席設計師"; stars = 3; }
+  else if(avgScore >= 80)  { rank = "B"; title = "🖌️ 專業美編"; stars = 2; }
+
+  lastResult = { party: true, totalScore: totalScore, stars: stars };
+
+  var ov = $("#ov-res");
+  ov.classList.remove("grade1","grade2","grade3");
+  $("#res-badge").textContent = "THE GRAND FINALE";
+  $("#res-badge").style.background = "linear-gradient(135deg,#FFD93D,#FF6B6B)";
+  $("#res-title").textContent = title;
+  $("#res-label").textContent = "PARTY TOTAL SCORE";
+  $("#res-best").textContent = "平均分數: " + avgScore.toFixed(0) + " 分";
+  $("#res-achv").classList.remove("show");
+
+  var partyIconsHTML = partyGames.map(function(id, i){
+    return '<span class="party-res-icon" style="animation-delay:' + (1.2 + i * 0.2) + 's">' + GAMES[id].icon + '</span>';
+  }).join("");
+  $("#res-learn-b").innerHTML = '<div style="margin:5px 0;">' + partyIconsHTML + '</div>';
+  $("#res-again").textContent = "再玩一次派對 ↻";
+
+  // 清空並準備分數顯示 (Rank + 數字)
+  $("#res-score").innerHTML = `<span class="award-rank rank-${rank.toLowerCase()}">${rank}</span><span id="party-count-num">0</span>`;
+  $("#res-stars").innerHTML = "<span>⭐</span>".repeat(stars);
+  ov.classList.add("grade" + stars, "show");
+
+  // 1. 分數跳動動畫
+  var current = 0;
+  var step = Math.ceil(totalScore / 25);
+  var timer = setInterval(function(){
+    current += step;
+    if(current >= totalScore){
+      current = totalScore;
+      clearInterval(timer);
+      
+      // 2. 揭曉最終分數時的煙火
+      for(var i=0; i<8; i++){
+        setTimeout(function(){
+          burst(ov, ri(40, 300), ri(100, 400), ["#FF6B6B","#4ECDC4","#FFE66D","#FFF"], 15);
+          sndGood();
+        }, i * 150);
+      }
+      sndWin();
+    }
+    $("#party-count-num").textContent = current;
+  }, 40);
+
+  // 3. 逐列顯示各關成績
+  var breakDownHTML = "";
+  partyScores.forEach(function(s, i){
+    var gameCfg = GAMES[s.game];
+    breakDownHTML += `<div class="row res-row-anim" style="animation-delay:${0.5 + i*0.2}s">
+      <span>${gameCfg.icon} ${gameCfg.name}</span><b>${s.score}</b>
+    </div>`;
+  });
+  $("#res-break").innerHTML = breakDownHTML;
+  $("#res-break").classList.add("show");
+}
+
+
+/* ================= GAME 1：極速魔術棒（掉落＋Combo，p5 版玩法） ================= */
+var G1 = (function(){
+  var bag = new TimerBag();
+  var running = false, playing = false, score = 0, combo = 0, jumped = false;
+  var fruits = [];
+  var area = $("#g1-area"), pickB = $("#g1-pick");
+  var tb = null, lastWrongToast = 0;
+  var FRUITS = [
+    "../水果/水果1.png",
+    "../水果/水果2.png",
+    "../水果/水果3.png",
+    "../水果/水果4.png",
+    "../水果/水果5.png",
+    "../水果/水果6.png"
+  ].map(path => encodeURI(path));
+  var MESSY = [
+    "repeating-linear-gradient(45deg,#FFB4A2 0 8px,#E07A5F 8px 16px)",
+    "repeating-linear-gradient(-30deg,#9AD0C8 0 8px,#5FA8A0 8px 16px)",
+    "linear-gradient(135deg,#F6BD60 20%,#F28482 20% 40%,#84A59D 40% 60%,#F5CAC3 60% 80%,#F7EDE2 80%)",
+    "repeating-radial-gradient(circle at 30% 30%,#CDB4DB 0 7px,#9D8AC2 7px 14px)",
+    "repeating-linear-gradient(90deg,#FFD166 0 8px,#EF9F76 8px 16px)",
+    "repeating-linear-gradient(0deg,#8ECAE6 0 8px,#5390B5 8px 16px)"
+  ];
+  var PART_COLORS = ["#FF6B6B","#4ECDC4","#FFE66D","#95E1D3"];
+
+  function cfg(){ return DIFF_CFG[DIFF].g1; }
+  function setScore(v){ score = Math.max(0, v); $("#g1-score").textContent = score; bumpScore($("#g1-pts")); }
+  function setCombo(v){
+    combo = v;
+    var c = document.getElementById("g1-combo");
+    if(c){
+      c.textContent = "🔥 x" + combo;
+      c.classList.toggle("hot", combo >= 1);
+      if(combo >= 1){ c.classList.remove("hot"); void c.offsetWidth; c.classList.add("hot"); }
+    }
+  }
+
+  function spawn(){
+    if(!playing) return;
+    var c = cfg();
+    var f = document.createElement("div");
+    f.className = "fruit";
+    var clean = Math.random() < c.trap;
+    if(clean){ f.classList.add("transparented"); f.dataset.clean = "1"; }
+    else { f.style.background = pick(MESSY); }
+    f.innerHTML = '<img src="' + pick(FRUITS) + '" style="width:85%; height:85%; object-fit:contain;">';
+    f.style.width = c.size + "px"; f.style.height = c.size + "px";
+    var W = area.clientWidth;
+    var fr = { el:f, x: ri(4, Math.max(5, W - c.size - 6)), y: -c.size, vy: c.vy0, size: c.size, done:false };
+    f.style.left = fr.x + "px";
+    f.style.top = fr.y + "px";
+    f.addEventListener("pointerdown", function(ev){
+      ev.preventDefault(); ev.stopPropagation();
+      if(!playing || fr.done) return;
+      var cx = fr.x + fr.size/2, cy = fr.y + fr.size/2;
+      if(tb.get() !== "wand"){
+        var now = Date.now();
+        if(now - lastWrongToast > 1200){
+          lastWrongToast = now;
+          toast("⚠️ 目前是「" + toolName(tb.get()) + "」！快點左側 🪄 魔術棒");
+          sndBad();
+        }
+        if(tb.get() === "brush"){
+          var sp = document.createElement("div");
+          sp.className = "splat";
+          sp.style.background = pick(PART_COLORS);
+          sp.style.left = (cx-13) + "px"; sp.style.top = (cy-13) + "px";
+          area.appendChild(sp);
+          setTimeout(function(){ sp.remove(); }, 900);
+        }
+        return;
+      }
+      fr.done = true;
+      if(f.dataset.clean){
+        f.classList.add("wrong");
+        setScore(score - 5);
+        setCombo(0);
+        floatPt(area, cx, cy-16, "−5 連擊中斷", false);
+        toast("⚠️ 這顆已經去背了！");
+        sndBad();
+        setTimeout(function(){ f.remove(); }, 320);
+      } else {
+        f.classList.add("zapped");
+        f.innerHTML = "✨";
+        burst(area, cx, cy, PART_COLORS, 10);
+        setScore(score + 10);
+        setCombo(combo + 1);
+        floatPt(area, cx, cy-16, "+10", true);
+        sndGood();
+        if(combo > 0 && combo % 3 === 0){
+          setScore(score + 30);
+          bigPop(area, "🔥 COMBO ×" + combo + "　+30!");
+          shakeEl(area);
+          sndCombo();
+        }
+        setTimeout(function(){ f.remove(); }, 380);
+      }
+    });
+    area.appendChild(f);
+    fruits.push(fr);
+    bag.after(spawn, cfg().interval);
+  }
+
+  /* 掉落物理（p5 版 gravity 移植） */
+  function physics(){
+    var H = area.clientHeight;
+    var c = cfg();
+    for(var i = fruits.length-1; i >= 0; i--){
+      var fr = fruits[i];
+      if(fr.done || !fr.el.isConnected){ fruits.splice(i,1); continue; }
+      fr.vy += c.acc;
+      fr.y += fr.vy;
+      fr.el.style.top = fr.y + "px";
+      if(fr.y > H){
+        /* 沒接到：連擊中斷 */
+        fruits.splice(i,1);
+        fr.el.remove();
+        if(combo > 0){ setCombo(0); }
+      }
+    }
+  }
+
+  function toolJump(){
+    if(!playing || jumped) return;
+    jumped = true;
+    tb.select("brush", false);
+    tb.mark("wand", true);
+    toast("❗ 工具被打亂了！快切回 🪄 魔術棒（W）");
+    snd(300,.2,"sawtooth",.14);
+  }
+
+  function beginPlay(){
+    if(playing) return;
+    pickB.classList.remove("show");
+    tb.mark("wand", false);
+    readyGo(bag, $("#g1-go"), function(){
+      playing = true;
+      runCountdown(bag, GAMES.g1.time, $("#g1-clock"), $("#g1-prg"), function(){
+        var s = score;
+        stop();
+        endGame("g1", s);
+      });
+      spawn();
+      bag.every(physics, 33);
+      bag.after(toolJump, ri(3200, 5600));
+    });
+  }
+
+  function start(){
+    stop();
+    running = true; playing = false; jumped = false;
+    fruits = [];
+    setScore(0);
+    area.querySelectorAll(".fruit,.floatpt,.splat,.particle,.bigpop").forEach(function(e){ e.remove(); });
+    resetClock($("#g1-clock"), $("#g1-prg"), GAMES.g1.time);
+    var comboHTML = '<span class="combochip" id="g1-combo">🔥 x0</span>';
+    tb = makeToolbar($("#g1-tools"), $("#g1-opt"), comboHTML, function(id, byUser){
+      if(!running) return;
+      if(id === "wand"){
+        if(!playing && byUser){ beginPlay(); }
+        if(playing){ tb.mark("wand", false); }
+      }
+    });
+    tb.select("move", false);
+    setCombo(0);
+    tb.mark("wand", true);
+    pickB.style.top = "80px";
+    pickB.classList.add("show");
+  }
+  function stop(){
+    running = false; playing = false;
+    bag.clearAll();
+    fruits = [];
+    area.querySelectorAll(".fruit,.floatpt,.splat,.particle,.bigpop").forEach(function(e){ e.remove(); });
+    pickB.classList.remove("show");
+    $("#g1-go").classList.remove("show");
+  }
+  return { start:start, stop:stop };
+})();
+
+/* ================= GAME 2：圖層疊疊樂（拖曳排序版） ================= */
+var G2 = (function(){
+  var bag = new TimerBag();
+  var running = false, playing = false, score = 0;
+  var stage = $("#g2-stage"), list = $("#g2-list");
+  var ROWH = 56;
+  var players = [
+    { id:"you", sprite:encodeURI("../平頭/1/111.png"), name:"你",     sub:"圖層 4", ring:"#FF6B6B", bg:"#FFE3E3" },
+    { id:"c1",  sprite:"../平頭/2/222.png", name:"CPU 派", sub:"圖層 3", ring:"#4ECDC4", bg:"#DFF6F4" },
+    { id:"c2",  sprite:"../平頭/3/333.png", name:"CPU 對", sub:"圖層 2", ring:"#FFD93D", bg:"#FFF6D6" },
+    { id:"c3",  sprite:"../平頭/4/444.png", name:"CPU 亂", sub:"圖層 1", ring:"#95E1D3", bg:"#E8FAF5" }
+  ];
+  var slots = [ {l:"4%",t:"10%"}, {l:"42%",t:"18%"}, {l:"8%",t:"46%"}, {l:"40%",t:"54%"} ];
+  var order = [], tiles = {}, rows = {};
+  var dragging = false, dragStartY = 0, dragOrigTop = 0;
+  var tb = null;
+  var targetIdx = 0;
+
+  function updateTarget() {
+    targetIdx = ri(0, 3);
+    var hints = ["第 1 層 (最頂端)", "第 2 層", "第 3 層", "第 4 層 (最底部)"];
+    $("#scr-g2 .hintbar").innerHTML = "🎯 目標：將圖層移至 <b>" + hints[targetIdx] + "</b> (對位中時持續得分)";
+  }
+
+  function setScore(v){
+    score = v;
+    $("#g2-score").textContent = score;
+    if(score % 10 === 0) bumpScore($("#g2-pts"));
+  }
+
+  function build(){
+    stage.innerHTML = ""; list.innerHTML = "";
+    tiles = {}; rows = {};
+    players.forEach(function(p, i){
+      var blinkDur = rnd(1.2, 2.5).toFixed(2) + "s"; // 為每個角色隨機計算更快的眨眼頻率
+
+      var t = document.createElement("div");
+      t.className = "tile";
+      t.style.left = slots[i].l; t.style.top = slots[i].t;
+      // 設定背景圖片並套用組合動畫 (眨眼動畫 + 漂浮動畫)
+      t.innerHTML = '<div class="player-sprite" style="background-image:url(\'' + p.sprite + '\'); ' +
+                    'animation: player-blink ' + blinkDur + ' steps(1, end) infinite, ' +
+                    'bossbob ' + (1.4+i*0.2) + 's ease-in-out infinite;"></div><span class="crownpill"></span>';
+      stage.appendChild(t);
+      tiles[p.id] = t;
+
+      var r = document.createElement("div");
+      r.className = "lrow" + (p.id==="you" ? " you" : "");
+      r.innerHTML = '<span class="eye">👁</span>'+
+        '<span class="thumb"><div class="player-sprite-thumb" style="background-image:url(\'' + p.sprite + '\'); ' +
+        'animation: player-blink ' + blinkDur + ' steps(1, end) infinite;"></div></span>'+
+        '<span class="lname">'+p.name+'<small>'+p.sub+'</small></span>'+
+        (p.id==="you" ? '<span class="youtag">拖我</span>' : '');
+      list.appendChild(r);
+      rows[p.id] = r;
+    });
+
+    var yr = rows["you"];
+    yr.addEventListener("pointerdown", function(ev){
+      if(!playing) return;
+      ev.preventDefault();
+      dragging = true;
+      yr.setPointerCapture(ev.pointerId);
+      yr.classList.add("drag");
+      dragStartY = ev.clientY;
+      dragOrigTop = order.indexOf("you") * ROWH;
+    });
+    yr.addEventListener("pointermove", function(ev){
+      if(!dragging) return;
+      var top = clamp(dragOrigTop + (ev.clientY - dragStartY), 0, (players.length-1)*ROWH);
+      yr.style.top = top + "px";
+      var idx = clamp(Math.round(top / ROWH), 0, players.length-1);
+      if(idx !== order.indexOf("you")){
+        moveTo("you", idx);
+        snd(500 + (players.length-1-idx)*120, .04, "square", .08);
+      }
+    });
+    function endDrag(){
+      if(!dragging) return;
+      dragging = false;
+      yr.classList.remove("drag");
+      layout();
+    }
+    yr.addEventListener("pointerup", endDrag);
+    yr.addEventListener("pointercancel", endDrag);
+  }
+
+  function layout(){
+    order.forEach(function(id, i){
+      if(!(dragging && id==="you")) rows[id].style.top = (i*ROWH) + "px";
+      tiles[id].style.zIndex = 40 - i;
+      tiles[id].classList.toggle("ontop", i===0);
+      tiles[id].classList.toggle("under", i!==0);
+      if(i===0){
+        tiles[id].querySelector(".crownpill").textContent =
+          (id==="you") ? "👑 YOU'RE WINNING!" : "👑 最上層";
+      }
+    });
+  }
+
+  function moveTo(id, idx){
+    var cur = order.indexOf(id);
+    if(cur === idx) return;
+    order.splice(cur, 1);
+    order.splice(idx, 0, id);
+    layout();
+  }
+
+  function cpuAct(){
+    if(!playing) return;
+    var cpus = ["c1","c2","c3"].filter(function(id){ return order.indexOf(id) !== 0; });
+    if(cpus.length){
+      var id = pick(cpus);
+      moveTo(id, 0);
+      rows[id].classList.remove("cpuflash");
+      void rows[id].offsetWidth;
+      rows[id].classList.add("cpuflash");
+      snd(260,.07,"sawtooth",.08);
+    }
+    var ai = DIFF_CFG[DIFF].g2.ai;
+    bag.after(cpuAct, ri(ai[0], ai[1]));
+  }
+
+  function start(){
+    stop();
+    running = true; playing = false;
+    setScore(0);
+    resetClock($("#g2-clock"), $("#g2-prg"), GAMES.g2.time);
+    tb = makeToolbar($("#g2-tools"), $("#g2-opt"), "", null);
+    tb.select("move", false);
+    order = players.map(function(p){ return p.id; });
+    order.sort(function(){ return Math.random()-0.5; });
+    if(order[0]==="you"){ order.splice(0,1); order.splice(2,0,"you"); }
+    build();
+    layout();
+    updateTarget();
+    readyGo(bag, $("#g2-go"), function(){
+      playing = true;
+      bag.after(cpuAct, 900);
+      bag.every(updateTarget, 5000); // 每 5 秒變換一次目標位置
+      bag.every(function(){
+        if(order.indexOf("you") === targetIdx){ setScore(score + 1); }
+      }, 100);
+      runCountdown(bag, isPartyMode ? 10 : GAMES.g2.time, $("#g2-clock"), $("#g2-prg"), function(){
+        var s = score;
+        stop();
+        endGame("g2", s);
+      });
+    });
+  }
+  function stop(){
+    running = false; playing = false; dragging = false;
+    bag.clearAll();
+    $("#g2-go").classList.remove("show");
+  }
+  return { start:start, stop:stop };
+})();
+
+/* ================= GAME 3：仿製印章（清潔度＋塗抹，p5 版玩法） ================= */
+var G3 = (function(){
+  var bag = new TimerBag();
+  var running = false, playing = false, score = 0, ink = 0, rubbing = false;
+  var muds = [], cleanedCount = 0;
+  var frame = $("#g3-frame"), boss = $("#g3-boss");
+  var target = $("#g3-target"), cursor = $("#g3-cursor"), pickB = $("#g3-pick");
+  var tb = null, lastWipeFx = 0, lastDryToast = 0, lastWrongToast = 0;
+  var STAR_COLORS = ["#FFE66D","#95E1D3","#FFFFFF"];
+
+  function cfg(){ return DIFF_CFG[DIFF].g3; }
+  function setScore(v){ score = v; $("#g3-score").textContent = score; bumpScore($("#g3-pts")); }
+  function setInk(v){
+    ink = clamp(v, 0, 100);
+    var bar = document.getElementById("g3-inkbar");
+    if(bar) bar.style.width = ink + "%";
+  }
+  function updateClean(){
+    var sum = cleanedCount * 100;
+    muds.forEach(function(m){ sum += (100 - m.hp); });
+    var total = (cleanedCount + muds.length) * 100;
+    var pct = total === 0 ? 0 : Math.round(sum / total * 100);
+    $("#g3-cleanbar").style.width = pct + "%";
+    $("#g3-cleanpct").textContent = pct + "%";
+    return pct;
+  }
+  function placeTarget(){
+    var W = frame.clientWidth, H = frame.clientHeight;
+    target.style.left = ri(8, Math.max(9, W-66)) + "px";
+    target.style.top  = ri(76, Math.max(77, H-66)) + "px";
+    target.classList.add("show");
+  }
+  target.addEventListener("pointerdown", function(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    if(!playing) return;
+    if(tb.get() !== "stamp"){
+      toast("⚠️ 先選 💠 仿製印章工具！");
+      sndBad();
+      return;
+    }
+    setInk(100);
+    target.classList.remove("show");
+    toast("✅ 取樣成功！快擦泥巴！");
+    sndGood();
+  });
+
+  function makeMud(fromBoss){
+    var c = cfg();
+    var size = ri(50,80);
+    var m = document.createElement("div");
+    m.className = "mud";
+    m.style.width = size + "px"; m.style.height = size + "px";
+    var blobR = ri(42,58)+"% "+ri(42,58)+"% "+ri(42,58)+"% "+ri(42,58)+"% / "+
+                ri(42,58)+"% "+ri(42,58)+"% "+ri(42,58)+"% "+ri(42,58)+"%";
+    m.innerHTML = '<div class="blob" style="border-radius:'+blobR+'"></div><div class="face">😵</div>';
+    var W = frame.clientWidth, H = frame.clientHeight;
+    var mud = { el:m, hp:100, size:size,
+      x: ri(4, Math.max(5, W-size-6)),
+      y: ri(72, Math.max(73, H-size-6)) };
+    if(fromBoss){
+      m.style.left = "-26px"; m.style.top = "-26px";
+      m.style.transform = "scale(.25)";
+    } else {
+      m.style.left = mud.x + "px"; m.style.top = mud.y + "px";
+    }
+    frame.appendChild(m);
+    muds.push(mud);
+    if(fromBoss){
+      requestAnimationFrame(function(){
+        m.style.left = mud.x + "px";
+        m.style.top  = mud.y + "px";
+        m.style.transform = "scale(1)";
+      });
+    }
+    updateClean();
+  }
+
+  function spit(){
+    if(!playing) return;
+    if(muds.length < cfg().maxMuds){
+      boss.classList.remove("spit");
+      void boss.offsetWidth;
+      boss.classList.add("spit");
+      snd(150,.12,"sawtooth",.1);
+      makeMud(true);
+
+      // 計算新位置並判斷面向方向
+      var oldLeft = parseFloat(boss.style.left) || 8;
+      var newLeft = ri(8, frame.clientWidth - 72);
+      var img = boss.querySelector("img");
+      if (img) {
+        img.style.transform = (newLeft > oldLeft) ? "scaleX(1)" : "scaleX(-1)";
+      }
+      boss.style.left = newLeft + "px";
+    }
+    var sp = cfg().spawn;
+    bag.after(spit, ri(sp[0], sp[1]));
+  }
+
+  function rubAt(x, y, ev){
+    if(tb.get() !== "stamp"){
+      var nw = Date.now();
+      if(nw - lastWrongToast > 1300){
+        lastWrongToast = nw;
+        toast("⚠️ 目前是「" + toolName(tb.get()) + "」！切回 💠 仿製印章");
+        sndBad();
+      }
+      cursor.style.display = "none";
+      return;
+    }
+    if(ev && !ev.altKey){
+      var nw = Date.now();
+      if(nw - lastWrongToast > 1300){
+        lastWrongToast = nw;
+        toast("⚠️ 仿製印章需按住 Alt 才能塗抹！");
+        sndBad();
+      }
+      cursor.style.display = "none";
+      return;
+    }
+    var brushR = cfg().brush / 2;
+    cursor.style.width = cfg().brush + "px";
+    cursor.style.height = cfg().brush + "px";
+    cursor.style.display = "block";
+    cursor.style.left = (x - brushR) + "px";
+    cursor.style.top = (y - brushR) + "px";
+    if(ink <= 0){
+      var now = Date.now();
+      if(now - lastDryToast > 1300){
+        lastDryToast = now;
+        toast("🪣 墨水用完了！先點「Alt 取樣」");
+        sndBad();
+      }
+      return;
+    }
+    var now2 = Date.now();
+    if(now2 - lastWipeFx > 70){
+      lastWipeFx = now2;
+      var w = document.createElement("div");
+      w.className = "wipe";
+      w.style.left = (x-12) + "px"; w.style.top = (y-12) + "px";
+      frame.appendChild(w);
+      setTimeout(function(){ w.remove(); }, 380);
+    }
+    for(var i = muds.length-1; i >= 0; i--){
+      var md = muds[i];
+      var r = md.size/2;
+      var cx = md.x + r, cy = md.y + r;
+      var dx = x-cx, dy = y-cy;
+      var hit = r + brushR * 0.6;
+      if(dx*dx + dy*dy < hit*hit){
+        md.hp -= cfg().power;
+        setInk(ink - 1.2);
+        md.el.style.opacity = (0.2 + Math.max(0, md.hp)/100*0.8);
+        md.el.style.transform = "scale(" + (0.5 + Math.max(0, md.hp)/100*0.5) + ")";
+        if(md.hp <= 0){
+          muds.splice(i,1);
+          cleanedCount++;
+          md.el.classList.add("dead");
+          (function(el, sx, sy){
+            setTimeout(function(){ el.remove(); }, 260);
+            ["✨","⭐","✨"].forEach(function(s, k){
+              var st = document.createElement("div");
+              st.className = "cleanstar";
+              st.textContent = s;
+              st.style.left = (sx + k*16 - 8) + "px";
+              st.style.top = (sy + (k%2)*12) + "px";
+              frame.appendChild(st);
+              setTimeout(function(){ st.remove(); }, 520);
+            });
+          })(md.el, cx-16, cy-12);
+          burst(frame, cx, cy, STAR_COLORS, 12);
+          setScore(score + 50);
+          floatPt(frame, cx-14, cy-32, "+50", true);
+          sndGood();
+          var pct = updateClean();
+          if(pct >= 100){
+            bigPop(frame, "✨ 100% 全乾淨！");
+            shakeEl(frame);
+            sndCombo();
+          }
+        } else {
+          updateClean();
+        }
+        if(ink <= 0){ placeTarget(); }
+        break;
+      }
+    }
+  }
+
+  function pos(ev){
+    var r = frame.getBoundingClientRect();
+    return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+  }
+  frame.addEventListener("pointerdown", function(ev){
+    if(!playing) return;
+    ev.preventDefault();
+    rubbing = true;
+    var p = pos(ev);
+    rubAt(p.x, p.y, ev);
+  });
+  frame.addEventListener("pointermove", function(ev){
+    if(!playing || !rubbing) return;
+    ev.preventDefault();
+    var p = pos(ev);
+    rubAt(p.x, p.y, ev);
+  });
+  function rubEnd(){ rubbing = false; cursor.style.display = "none"; }
+  frame.addEventListener("pointerup", rubEnd);
+  frame.addEventListener("pointercancel", rubEnd);
+  frame.addEventListener("pointerleave", rubEnd);
+
+  function beginPlay(){
+    if(playing) return;
+    pickB.classList.remove("show");
+    tb.mark("stamp", false);
+    readyGo(bag, $("#g3-go"), function(){
+      playing = true;
+      toast("💠 先點「Alt 取樣」補墨水！");
+      placeTarget();
+      for(var i = 0; i < cfg().initial; i++){ makeMud(false); }
+      bag.after(spit, 1200);
+      runCountdown(bag, isPartyMode ? 10 : GAMES.g3.time, $("#g3-clock"), $("#g3-prg"), function(){
+        var pct = updateClean();
+        var bonus = pct >= 100 ? 50 : 0;
+        var s = score + bonus;
+        if(bonus) toast("🧽 清潔度 100% 加分 +50！");
+        stop();
+        endGame("g3", s);
+      });
+    });
+  }
+
+  function start(){
+    stop();
+    running = true; playing = false;
+    setScore(0);
+    boss.style.left = "8px";
+    var img = boss.querySelector("img");
+    if (img) img.style.transform = "scaleX(-1)";
+    muds = []; cleanedCount = 0;
+    frame.querySelectorAll(".mud,.cleanstar,.wipe,.floatpt,.particle,.bigpop").forEach(function(e){ e.remove(); });
+    resetClock($("#g3-clock"), $("#g3-prg"), GAMES.g3.time);
+    $("#g3-cleanbar").style.width = "0%";
+    $("#g3-cleanpct").textContent = "0%";
+    var inkHTML = '<span class="inkmini"><small>墨水</small><span class="itrack"><i id="g3-inkbar"></i></span></span>';
+    tb = makeToolbar($("#g3-tools"), $("#g3-opt"), inkHTML, function(id, byUser){
+      if(!running) return;
+      if(id === "stamp"){
+        if(!playing && byUser){ beginPlay(); }
+        if(playing){ tb.mark("stamp", false); }
+      }
+    });
+    tb.select("move", false);
+    setInk(0);
+    tb.mark("stamp", true);
+    pickB.style.top = "270px";
+    pickB.classList.add("show");
+  }
+  function stop(){
+    running = false; playing = false; rubbing = false;
+    bag.clearAll();
+    muds = [];
+    frame.querySelectorAll(".mud,.cleanstar,.wipe,.floatpt,.particle,.bigpop").forEach(function(e){ e.remove(); });
+    target.classList.remove("show");
+    cursor.style.display = "none";
+    $("#g3-go").classList.remove("show");
+  }
+  return { start:start, stop:stop };
+})();
+
+/* ================= GAME 4：色彩大師（色彩對比） ================= */
+var G4 = (function(){
+  var bag = new TimerBag();
+  var running = false, playing = false, score = 0;
+  var targetRGB = { r:0, g:0, b:0 };
+  var currentRGB = { r:127, g:127, b:127 };
+  var tb = null;
+
+  function setScore(v){ score = v; $("#g4-score").textContent = score; bumpScore($("#g4-pts")); }
+
+  function updatePreview(){
+    currentRGB.r = parseInt($("#g4-r").value);
+    currentRGB.g = parseInt($("#g4-g").value);
+    currentRGB.b = parseInt($("#g4-b").value);
+    var css = "rgb("+currentRGB.r+","+currentRGB.g+","+currentRGB.b+")";
+    $("#g4-preview-color").style.backgroundColor = css;
+    $("#g4-preview-color").textContent = "R: "+currentRGB.r+" G: "+currentRGB.g+" B: "+currentRGB.b;
+  }
+
+  function nextRound(){
+    targetRGB = { r:ri(0,255), g:ri(0,255), b:ri(0,255) };
+    $("#g4-target-color").style.backgroundColor = "rgb("+targetRGB.r+","+targetRGB.g+","+targetRGB.b+")";
+  }
+
+  function submit(){
+    if(!playing) return;
+    var d = Math.sqrt(Math.pow(targetRGB.r-currentRGB.r,2) + Math.pow(targetRGB.g-currentRGB.g,2) + Math.pow(targetRGB.b-currentRGB.b,2));
+    var similarity = Math.round((1 - d / 441.67) * 100);
+    var pts = Math.floor(Math.max(0, 100 - (d / 4)));
+    setScore(score + pts);
+    toast("相似度: " + similarity + "% (+" + pts + ")");
+    if(pts > 80) sndGood(); else sndSelect();
+    nextRound();
+  }
+
+  function start(){
+    stop();
+    running = true; playing = false;
+    setScore(0);
+    resetClock($("#g4-clock"), $("#g4-prg"), GAMES.g4.time);
+    tb = makeToolbar($("#g4-tools"), $("#g4-opt"), "", function(id, byUser){
+        // 此關卡不需要特定工具邏輯
+    });
+    tb.select("move", false);
+    // 重置滑桿
+    $("#g4-r").value = 127; $("#g4-g").value = 127; $("#g4-b").value = 127;
+    updatePreview();
+    nextRound();
+
+    readyGo(bag, $("#g4-go"), function(){
+      playing = true;
+      runCountdown(bag, isPartyMode ? 10 : GAMES.g4.time, $("#g4-clock"), $("#g4-prg"), function(){
+        var s = score;
+        stop();
+        endGame("g4", s);
+      });
+    });
+  }
+
+  function stop(){
+    running = false; playing = false;
+    bag.clearAll();
+    $("#g4-go").classList.remove("show");
+  }
+
+  // 綁定事件
+  $("#g4-r").addEventListener("input", updatePreview);
+  $("#g4-g").addEventListener("input", updatePreview);
+  $("#g4-b").addEventListener("input", updatePreview);
+  $("#g4-submit").addEventListener("click", submit);
+
+  return { start:start, stop:stop };
+})();
+
+/* ================= GAME 5：筆刷大師（繪製圓形） ================= */
+var G5 = (function(){
+  var bag = new TimerBag();
+  var running = false, playing = false, score = 0;
+  var targetShape = { x:0, y:0, r:0 }; // 目標圓形
+  var playerStrokes = []; // 玩家繪製的筆觸
+  var pickB = $("#g5-pick");
+  var brushSize = 20; // 筆刷大小
+  var drawing = false; // 是否正在繪製
+  var shapesCompleted = 0; // 完成的圖形數量
+  var maxShapes = 10; // 至少完成的圖形數量
+  var tb = null;
+
+  function setScore(v){ score = v; $("#g5-score").textContent = score; bumpScore($("#g5-pts")); }
+
+  function generateNewTarget(){
+    var minR = 60;
+    var maxR = 120;
+    targetShape.r = ri(minR, maxR);
+    var area = $("#g5-canvas");
+    targetShape.x = ri(targetShape.r + 10, area.clientWidth - targetShape.r - 10);
+    targetShape.y = ri(targetShape.r + 10, area.clientHeight - targetShape.r - 10);
+    playerStrokes = []; // 清空玩家筆觸
+    
+    var tEl = $("#g5-target-circle");
+    tEl.style.width = (targetShape.r * 2) + "px";
+    tEl.style.height = (targetShape.r * 2) + "px";
+    tEl.style.left = (targetShape.x - targetShape.r) + "px";
+    tEl.style.top = (targetShape.y - targetShape.r) + "px";
+    tEl.style.display = "block";
+  }
+
+  function evaluateDrawing(){
+    if(playerStrokes.length < 5) { // 筆觸太少不計分
+      toast("筆觸太少，請多畫一點！");
+      sndBad();
+      playerStrokes = [];
+      return;
+    }
+
+    var hitPoints = 0;
+    var totalPoints = playerStrokes.length;
+    var targetCircle = targetShape;
+
+    for(var i = 0; i < playerStrokes.length; i++){
+      var p = playerStrokes[i];
+      var d = Math.sqrt(Math.pow(p.x - targetCircle.x, 2) + Math.pow(p.y - targetCircle.y, 2));
+      
+      // 如果筆觸點在目標圓形輪廓附近 (考慮筆刷大小)
+      if(Math.abs(d - targetCircle.r) < brushSize / 2){
+        hitPoints++;
+      }
+    }
+
+    $("#g5-canvas").querySelectorAll(".brush-stroke").forEach(el => el.remove());
+    var accuracy = totalPoints > 0 ? (hitPoints / totalPoints) : 0;
+    var pointsEarned = 0;
+
+    if(accuracy > 0.7){ // 70% 以上算完成
+      pointsEarned = Math.floor(100 * accuracy); // 根據準確度給分
+      shapesCompleted++;
+      setScore(score + pointsEarned);
+      toast("完美! +" + pointsEarned);
+      sndGood();
+      generateNewTarget(); // 生成下一個目標
+    } else if(accuracy > 0.4){
+      pointsEarned = Math.floor(50 * accuracy);
+      setScore(score + pointsEarned);
+      toast("不錯! +" + pointsEarned);
+      sndGood();
+      generateNewTarget();
+    } else {
+      toast("再試一次!");
+      sndBad();
+      playerStrokes = []; // 清空筆觸，讓玩家重畫
+    }
+  }
+
+  function start(){
+    stop();
+    running = true; playing = false;
+    setScore(0);
+    shapesCompleted = 0;
+    resetClock($("#g5-clock"), $("#g5-prg"), GAMES.g5.time);
+    tb = makeToolbar($("#g5-tools"), $("#g5-opt"), "", function(id, byUser){
+      if(!running) return;
+      if(id === "brush"){
+        pickB.classList.remove("show");
+        if(!playing && byUser){ beginPlay(); }
+      }
+    });
+    tb.select("move", false); // 預設選取移動工具
+    tb.mark("brush", true); // 提示選取筆刷工具
+    pickB.style.top = "230px";
+    pickB.classList.add("show");
+    generateNewTarget(); // 生成第一個目標
+
+    readyGo(bag, $("#g5-go"), function(){
+      playing = true;
+      runCountdown(bag, isPartyMode ? 10 : GAMES.g5.time, $("#g5-clock"), $("#g5-prg"), function(){
+        var s = score;
+        stop();
+        endGame("g5", s);
+      });
+    });
+  }
+
+  function stop(){
+    running = false; playing = false; drawing = false;
+    bag.clearAll();
+    playerStrokes = [];
+    $("#g5-go").classList.remove("show");
+    $("#g5-target-circle").style.display = "none";
+    $("#g5-canvas").querySelectorAll(".brush-stroke").forEach(el => el.remove());
+  }
+
+  // 事件處理 (直接在 G5 模組內處理，因為是 DOM 繪圖)
+  $("#g5-canvas").addEventListener("pointerdown", function(ev){
+    if(!playing || tb.get() !== "brush") return;
+    drawing = true;
+    addStroke(ev);
+  });
+  $("#g5-canvas").addEventListener("pointermove", function(ev){
+    if(!playing || !drawing) return;
+    addStroke(ev);
+  });
+  
+  function addStroke(ev) {
+    var rect = $("#g5-canvas").getBoundingClientRect();
+    var x = ev.clientX - rect.left;
+    var y = ev.clientY - rect.top;
+    playerStrokes.push({ x: x, y: y });
+    
+    var dot = document.createElement("div");
+    dot.className = "brush-stroke";
+    dot.style.left = (x - 10) + "px";
+    dot.style.top = (y - 10) + "px";
+    $("#g5-canvas").appendChild(dot);
+  }
+
+  $("#g5-canvas").addEventListener("pointerup", function(){ if(drawing){drawing=false; evaluateDrawing();} });
+  $("#g5-canvas").addEventListener("pointerleave", function(){ if(drawing){drawing=false; evaluateDrawing();} });
+
+  return { start:start, stop:stop };
+})();
+
+/* ================= GAME 6：套索捕魚（不規則選取） ================= */
+var G6 = (function(){
+  var bag = new TimerBag();
+  var running = false, playing = false, score = 0;
+  var fishes = [], lassoPoints = [], drawing = false;
+  var canvas = $("#g6-canvas"), svgPath = $("#g6-lasso-path"), pickB = $("#g6-pick"), tb = null;
+  var FISH_TYPES = ["🐟","🐠","🐡","🦑","🦞"];
+  var speedMult = 1.0;
+
+  function setScore(v){ score = v; $("#g6-score").textContent = score; bumpScore($("#g6-pts")); }
+
+  function spawnFish(){
+    if(!playing) return;
+    var el = document.createElement("div");
+    el.className = "fish";
+    el.textContent = pick(FISH_TYPES);
+    var W = canvas.clientWidth, H = canvas.clientHeight;
+    var side = ri(0, 3);
+    var x, y, vx, vy;
+    var s = speedMult;
+    if(side === 0){ x = -40; y = ri(0, H); vx = rnd(1, 3) * s; vy = rnd(-1, 1) * s; }
+    else if(side === 1){ x = W + 40; y = ri(0, H); vx = rnd(-3, -1) * s; vy = rnd(-1, 1) * s; }
+    else if(side === 2){ x = ri(0, W); y = -40; vx = rnd(-1, 1) * s; vy = rnd(1, 3) * s; }
+    else { x = ri(0, W); y = H + 40; vx = rnd(-1, 1) * s; vy = rnd(-3, -1) * s; }
+    el.style.left = x + "px"; el.style.top = y + "px";
+    if(vx > 0) el.style.transform = "scaleX(-1)";
+    canvas.appendChild(el);
+    fishes.push({ el:el, x:x, y:y, vx:vx, vy:vy });
+    bag.after(spawnFish, ri(600, 1200) / s);
+  }
+
+  function updateFishes(){
+    var W = canvas.clientWidth, H = canvas.clientHeight;
+    for(var i = fishes.length-1; i >= 0; i--){
+      var f = fishes[i];
+      f.x += f.vx; f.y += f.vy;
+      f.el.style.left = f.x + "px"; f.el.style.top = f.y + "px";
+      if(f.x < -100 || f.x > W+100 || f.y < -100 || f.y > H+100){ f.el.remove(); fishes.splice(i, 1); }
+    }
+  }
+
+  // 點在多邊形內的演算法 (Ray Casting)
+  function isInside(p, poly) {
+    var inside = false;
+    for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      var xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+      var intersect = ((yi > p.y) != (yj > p.y)) && (p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  function handleLasso(){
+    if(lassoPoints.length < 3) return;
+    var caughtCount = 0;
+    for(var i = fishes.length-1; i >= 0; i--){
+      var f = fishes[i];
+      if(isInside({x: f.x + 16, y: f.y + 16}, lassoPoints)){
+        f.el.classList.add("caught");
+        (function(el){ setTimeout(function(){ el.remove(); }, 500); })(f.el);
+        fishes.splice(i, 1);
+        caughtCount++;
+      }
+    }
+    if(caughtCount > 0){
+      var pts = caughtCount * 50;
+      setScore(score + pts);
+      sndGood(); if(caughtCount >= 3) sndCombo();
+      toast("捕獲 " + caughtCount + " 隻魚！ +" + pts);
+    }
+    lassoPoints = []; svgPath.setAttribute("points", "");
+  }
+
+  function start(){
+    stop(); running = true; playing = false; setScore(0);
+    resetClock($("#g6-clock"), $("#g6-prg"), GAMES.g6.time);
+    tb = makeToolbar($("#g6-tools"), $("#g6-opt"), "", function(id, byUser){
+      if(id === "lasso" && !playing && byUser) {
+        pickB.classList.remove("show");
+        beginPlay();
+      }
+    });
+    tb.select("move", false); tb.mark("lasso", true);
+    pickB.style.top = "40px";
+    pickB.classList.add("show");
+  }
+
+  function beginPlay(){
+    tb.mark("lasso", false);
+    readyGo(bag, $("#g6-go"), function(){
+      playing = true;
+      speedMult = 1.0;
+      // 每 1.5 秒提升一次難度 (速度 +10%)
+      bag.every(function(){ if(playing) speedMult += 0.1; }, 1500);
+      spawnFish();
+      bag.every(updateFishes, 30);
+      runCountdown(bag, isPartyMode ? 10 : GAMES.g6.time, $("#g6-clock"), $("#g6-prg"), function(){
+        var s = score; stop(); endGame("g6", s);
+      });
+    });
+  }
+
+  function stop(){
+    running = false; playing = false; drawing = false;
+    bag.clearAll();
+    fishes.forEach(f => f.el.remove()); fishes = [];
+    lassoPoints = []; svgPath.setAttribute("points", "");
+    $("#g6-go").classList.remove("show");
+  }
+
+  canvas.addEventListener("pointerdown", function(ev){
+    if(!playing || tb.get() !== "lasso") return;
+    drawing = true; lassoPoints = [];
+    var rect = canvas.getBoundingClientRect();
+    lassoPoints.push({ x: ev.clientX - rect.left, y: ev.clientY - rect.top });
+  });
+  canvas.addEventListener("pointermove", function(ev){
+    if(!drawing) return;
+    var rect = canvas.getBoundingClientRect();
+    var p = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+    var last = lassoPoints[lassoPoints.length-1];
+    if(Math.hypot(p.x-last.x, p.y-last.y) > 5){
+      lassoPoints.push(p);
+      var ptsStr = lassoPoints.map(pt => pt.x + "," + pt.y).join(" ");
+      svgPath.setAttribute("points", ptsStr);
+    }
+  });
+  canvas.addEventListener("pointerup", function(){
+    if(!drawing) return;
+    drawing = false; handleLasso();
+  });
+
+  return { start:start, stop:stop };
+})();
+
+refreshBest();
+document.body.addEventListener("pointerdown", ensureAudio, { once:false });
+
+// 介紹畫面點擊切換
+var introTransitioning = false;
+$("#scr-intro").addEventListener("click", function(){
+  if (introTransitioning) return; // 防止連續點擊
+  introTransitioning = true;
+
+  // 選取想要動畫的元素
+  var elements = this.querySelectorAll('img, h1, .sub, .tap-start'); // Changed to scr-mode-select
+  
+  // 加上動畫類別
+  elements.forEach(function(el) {
+    el.classList.add('fade-out-up');
+  });
+
+  // 等待動畫結束後 (500ms) 再換頁
+  setTimeout(function(){ // Changed to scr-mode-select
+    showScreen("scr-mode-select");
+    sndSelect();
+  }, 500);
+});
+</script>
+</body>
+</html>
